@@ -175,7 +175,8 @@
                 <button onclick="toggleHojas('recepcion')" id="btn-tg-recepcion" class="px-3 py-1.5 rounded text-sm font-bold text-slate-300 hover:text-white transition-colors">2. Ver Recepción</button>
                 <button onclick="toggleHojas('ambas')" id="btn-tg-ambas" class="px-3 py-1.5 rounded text-sm font-bold bg-blue-600 text-white shadow">Ambas Hojas</button>
             </div>
-            <button onclick="window.print()" class="px-6 py-2 bg-green-500 text-white rounded font-black hover:bg-green-600 shadow-md transition-colors text-lg flex items-center gap-2 mt-2 md:mt-0">IMPRIMIR AHORA</button>
+            <!-- ✅ CAMBIO 1: Se modificó el onclick para usar la nueva función -->
+            <button onclick="window.forzarImpresioniOS()" class="px-6 py-2 bg-green-500 text-white rounded font-black hover:bg-green-600 shadow-md transition-colors text-lg flex items-center gap-2 mt-2 md:mt-0">🖨️ IMPRIMIR AHORA</button>
         </div>
 
         <div id="hoja-servicio-container" class="formato-servicio">
@@ -270,8 +271,6 @@
                 </div>
             </div>
 
-            <!-- Los renglones de OBSERVACIONES se llenan dinámicamente:
-                 ENTRADA = Observaciones Estéticas · SALIDA = Comentario del mecánico (+ obs. estéticas si existen) -->
             <div class="fr-obs-box" id="fr-caja-obs-recepcion">
                 <div class="fr-obs-title">OBSERVACIONES.</div>
                 <div class="fr-obs-line"></div><div class="fr-obs-line"></div><div class="fr-obs-line"></div><div class="fr-obs-line"></div>
@@ -597,13 +596,6 @@
             if(window.urlFotoIzquierda) document.getElementById('img-left').src = window.urlFotoIzquierda;
             if(window.urlFotoLicencia) document.getElementById('img-licencia').src = window.urlFotoLicencia;
 
-            // =====================================================================
-            // OBSERVACIONES (renglones de la hoja):
-            //  · ENTRADA → se llenan con las "Observaciones Estéticas" (como siempre)
-            //  · SALIDA  → se llenan con el COMENTARIO DEL MECÁNICO; y si además
-            //              alguien escribió Observaciones Estéticas, van en el
-            //              renglón siguiente para que nada se pierda.
-            // =====================================================================
             const cajaObs = document.getElementById('fr-caja-obs-recepcion');
             if (cajaObs) {
                 const estiloTexto = "font-size: 11px; font-weight: bold; padding: 2px 0; border-bottom: 1px solid black; min-height: 14px;";
@@ -622,7 +614,6 @@
                     }
                 }
 
-                // Completa con renglones vacíos hasta dejar 4 líneas en total
                 const renglonesVacios = Math.max(0, 4 - lineasHTML.length);
                 let html = `<div class="fr-obs-title">OBSERVACIONES.</div>` + lineasHTML.join("");
                 for (let i = 0; i < renglonesVacios; i++) {
@@ -630,7 +621,6 @@
                 }
                 cajaObs.innerHTML = html;
             }
-            // ===== FIN OBSERVACIONES =====
 
             if(!modoSoloLectura && (serviciosMarcados.length > 0 || valorGrupo === "Correctivo")) {
                 guardarEnFirebase({ 
@@ -889,6 +879,23 @@
                         aplicarPaquete();
                     }
                 }
+            }
+        };
+
+        // ✅ CAMBIO 2: Nueva función para forzar la impresión en iOS Safari
+        window.forzarImpresioniOS = function() {
+            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+                setTimeout(function() {
+                    window.print();
+                }, 100);
+                
+                setTimeout(function() {
+                    if (confirm('Si el diálogo de impresión no apareció:\n\n1. Toca el botón COMPARTIR de Safari (cuadrado con flecha ↑)\n2. Desplázate hacia abajo\n3. Selecciona "Imprimir"\n\n¿Intentar de nuevo?')) {
+                        window.print();
+                    }
+                }, 3000);
+            } else {
+                window.print();
             }
         };
     </script>
