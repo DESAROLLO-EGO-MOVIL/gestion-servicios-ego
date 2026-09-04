@@ -175,7 +175,6 @@
                 <button onclick="toggleHojas('recepcion')" id="btn-tg-recepcion" class="px-3 py-1.5 rounded text-sm font-bold text-slate-300 hover:text-white transition-colors">2. Ver Recepción</button>
                 <button onclick="toggleHojas('ambas')" id="btn-tg-ambas" class="px-3 py-1.5 rounded text-sm font-bold bg-blue-600 text-white shadow">Ambas Hojas</button>
             </div>
-            <!-- ✅ CAMBIO 1: Se modificó el onclick para usar la nueva función -->
             <button onclick="window.forzarImpresioniOS()" class="px-6 py-2 bg-green-500 text-white rounded font-black hover:bg-green-600 shadow-md transition-colors text-lg flex items-center gap-2 mt-2 md:mt-0">🖨️ IMPRIMIR AHORA</button>
         </div>
 
@@ -237,6 +236,7 @@
                 </div>
             </div>
 
+            <!-- AQUÍ ES DONDE CAMBIA EL TÍTULO -->
             <div class="fr-title" id="fr-titulo-hoja">FORMATO RECEPCION.</div>
 
             <div class="fr-row">
@@ -534,7 +534,8 @@
 
             const esSalida = (window.movimientoTipo === "SALIDA");
 
-            document.getElementById('fr-titulo-hoja').innerText = esSalida ? "FORMATO ENTREGA." : "FORMATO RECEPCION.";
+            // Aseguramos que cambie el título correctamente
+            document.getElementById('fr-titulo-hoja').innerText = esSalida ? "FORMATO ENTREGA (SALIDA)." : "FORMATO RECEPCION.";
 
             if (esSalida) {
                 document.getElementById('fr-label-carroceria').classList.add('hidden-hoja');
@@ -882,7 +883,6 @@
             }
         };
 
-        // ✅ CAMBIO 2: Nueva función para forzar la impresión en iOS Safari
         window.forzarImpresioniOS = function() {
             if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
                 setTimeout(function() {
