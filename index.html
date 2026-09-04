@@ -236,7 +236,6 @@
                 </div>
             </div>
 
-            <!-- AQUÍ ES DONDE CAMBIA EL TÍTULO -->
             <div class="fr-title" id="fr-titulo-hoja">FORMATO RECEPCION.</div>
 
             <div class="fr-row">
@@ -534,7 +533,6 @@
 
             const esSalida = (window.movimientoTipo === "SALIDA");
 
-            // Aseguramos que cambie el título correctamente
             document.getElementById('fr-titulo-hoja').innerText = esSalida ? "FORMATO ENTREGA (SALIDA)." : "FORMATO RECEPCION.";
 
             if (esSalida) {
@@ -639,7 +637,8 @@
                 document.getElementById('btn-tg-servicio').style.display = 'none';
                 document.getElementById('btn-tg-ambas').style.display = 'none';
 
-                const linkSalida = `https://dantesotomayor17-stack.github.io/gestion-servicios-ego/?unidad=${encodeURIComponent(economico)}&ruta=${encodeURIComponent(base)}&km=${encodeURIComponent(kilometraje)}&comentarios=${encodeURIComponent(textoComentarios)}&obsest=${encodeURIComponent(window.obsEsteticas || '')}&movimiento=SALIDA&f_frontal=${encodeURIComponent(window.urlFotoFrontal)}&f_trasera=${encodeURIComponent(window.urlFotoTrasera)}&f_derecha=${encodeURIComponent(window.urlFotoDerecha)}&f_izquierda=${encodeURIComponent(window.urlFotoIzquierda)}&f_licencia=${encodeURIComponent(window.urlFotoLicencia)}`;
+                // CORRECCIÓN URL AQUÍ PARA EXCEL 
+                const linkSalida = `https://desarollo-ego-movil.github.io/gestion-servicios-ego/?unidad=${encodeURIComponent(economico)}&ruta=${encodeURIComponent(base)}&km=${encodeURIComponent(kilometraje)}&comentarios=${encodeURIComponent(textoComentarios)}&obsest=${encodeURIComponent(window.obsEsteticas || '')}&movimiento=SALIDA&f_frontal=${encodeURIComponent(window.urlFotoFrontal)}&f_trasera=${encodeURIComponent(window.urlFotoTrasera)}&f_derecha=${encodeURIComponent(window.urlFotoDerecha)}&f_izquierda=${encodeURIComponent(window.urlFotoIzquierda)}&f_licencia=${encodeURIComponent(window.urlFotoLicencia)}`;
                 actualizarLinkEnHojaExcel(linkSalida);
             } else {
                 toggleHojas('ambas');
@@ -675,7 +674,8 @@
                     if(esProgramacionOficina) alert(" BORRADOR GUARDADO. La unidad quedó pre-programada correctamente.");
                 }
 
-                const linkUnico = "https://dantesotomayor17-stack.github.io/gestion-servicios-ego/?ver=" + docIdFinal;
+                // CORRECCIÓN URL AQUÍ PARA FIREBASE 
+                const linkUnico = "https://desarollo-ego-movil.github.io/gestion-servicios-ego/?ver=" + docIdFinal;
                 actualizarLinkEnHojaExcel(linkUnico);
             } catch (e) { console.error("Error al guardar: ", e); }
         }
