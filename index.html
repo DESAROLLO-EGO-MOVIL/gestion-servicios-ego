@@ -26,10 +26,9 @@
         .title-section { text-align: center; margin: 0; flex-grow: 1; }
         .title-section h1 { font-size: 19px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin: 0; }
         .notificacion-correctivo { display: block; background-color: #fef2f2; color: #b91c1c; border: 2px solid #b91c1c; font-weight: bold; font-size: 13px; text-align: center; padding: 2px; margin: 6px auto 0 auto; width: 220px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        .info-row { display: flex; justify-content: center; gap: 20px; margin-bottom: 8px; font-size: 11px; font-weight: bold; }
+        .info-row { display: flex; justify-content: center; gap: 14px; margin-bottom: 8px; font-size: 11px; font-weight: bold; }
         .info-field { display: flex; align-items: flex-end; }
-        .info-field span:first-child { margin-right: 2px; margin-left: 6px; }
-        .info-field:first-child span:first-child { margin-left: 0; }
+        .info-field span:first-child { margin-right: 2px; margin-left: 2px; }
         .info-line { border-bottom: 1px solid black; display: inline-block; text-align: center; }
         .table-container { border: 2px solid black; width: 100%; border-collapse: collapse; }
         .table-container th, .table-container td { border: 1px solid black; padding: 2px 3px; font-size: 9px; text-align: left; line-height: 1.1; }
@@ -65,8 +64,6 @@
         .licencia-salida-wrap .foto-card { border: 2px solid #1a73e8; background-color: #f5f9ff; }
         .licencia-salida-wrap .foto-header-title { background-color: #1a73e8; color: #fff; font-size: 9px; padding: 3px 1px; border-bottom: none; }
 
-        .badge-folio-print { border: 1.5px solid black; padding: 3px 6px; font-size: 10.5px; font-weight: bold; border-radius: 4px; display: inline-block; background-color: #f9fafb; margin-top: 4px; }
-
         .hidden-hoja { display: none !important; }
     </style>
 </head>
@@ -101,7 +98,7 @@
                         <div><label class="block text-sm font-semibold text-slate-700 mb-1">ECONÓMICO</label><input type="text" id="inputEco" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. 3262"></div>
                         <div><label class="block text-sm font-semibold text-slate-700 mb-1">BASE / RUTA</label><input type="text" id="inputBase" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. RUTA 201"></div>
                         <div><label class="block text-sm font-semibold text-slate-700 mb-1">KILOMETRAJE</label><input type="number" id="inputKm" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500" placeholder="Ej. 120000"></div>
-                        <div><label class="block text-sm font-semibold text-slate-700 mb-1 text-blue-700 font-bold">FOLIO CITA</label><input type="text" id="inputFolio" class="w-full px-3 py-2 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 uppercase font-bold text-blue-800 bg-blue-50/50" placeholder="Ej. CIT-1045"></div>
+                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">FOLIO CITA</label><input type="text" id="inputFolio" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. GD-1026-0330"></div>
                         <div><label class="block text-sm font-semibold text-slate-700 mb-1">MECÁNICO</label><input type="text" id="inputMecanico" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. LUIS"></div>
                         <div><label class="block text-sm font-semibold text-slate-700 mb-1">FECHA</label><input type="date" id="inputFecha" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase"></div>
                     </div>
@@ -205,15 +202,15 @@
                 </div>
 
                 <div style="width: 190px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;">
-                    <img src="logo_goldendragon.png" alt="Logo Golden Dragon" style="max-width: 100%; max-height: 52px; object-fit: contain;" onerror="this.src='logo_goldendragon.jpg'">
-                    <div class="badge-folio-print">FOLIO CITA: <span id="print-folio-servicio">--</span></div>
+                    <img src="logo_goldendragon.png" alt="Logo Golden Dragon" style="max-width: 100%; max-height: 60px; object-fit: contain;" onerror="this.src='logo_goldendragon.jpg'">
                 </div>
             </div>
             <div class="info-row">
                 <div class="info-field"><span>ECONOMICO.</span> <span class="info-line" id="print-eco" style="width: 60px;"></span></div>
-                <div class="info-field"><span>BASE/RUTA.</span> <span class="info-line" id="print-base" style="width: 100px;"></span></div>
-                <div class="info-field"><span>KILOMETRAJE.</span> <span class="info-line" id="print-km" style="width: 80px;"></span></div>
-                <div class="info-field"><span>FECHA.</span> <span class="info-line" id="print-fecha" style="width: 80px;"></span></div>
+                <div class="info-field"><span>BASE/RUTA.</span> <span class="info-line" id="print-base" style="width: 90px;"></span></div>
+                <div class="info-field"><span>KILOMETRAJE.</span> <span class="info-line" id="print-km" style="width: 75px;"></span></div>
+                <div class="info-field"><span>FECHA.</span> <span class="info-line" id="print-fecha" style="width: 75px;"></span></div>
+                <div class="info-field"><span>FOLIO CITA.</span> <span class="info-line" id="print-folio-servicio" style="width: 95px;"></span></div>
             </div>
             <table class="table-container">
                 <thead>
@@ -255,11 +252,11 @@
 
             <div class="fr-row">
                 <span class="fr-label">NUM. ECONÓMICO:</span> 
-                <span class="fr-line-fixed" style="width: 80px;" id="fr-eco"></span>
+                <span class="fr-line-fixed" style="width: 85px;" id="fr-eco"></span>
                 <span class="fr-label" style="margin-left: 15px;">RUTA / BASE:</span> 
                 <span class="fr-line-fixed" style="width: 130px;" id="fr-base"></span>
                 <span class="fr-label" style="margin-left: 15px;">FOLIO CITA:</span> 
-                <span class="fr-line-fixed" style="width: 90px; color: #b91c1c;" id="fr-folio"></span>
+                <span class="fr-line-fixed" style="width: 110px;" id="fr-folio"></span>
             </div>
 
             <div class="fr-row">
@@ -812,7 +809,7 @@
                     `<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded border border-amber-200">Programado</span>` : 
                     `<span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded border border-green-200">✅ Completado</span>`;
 
-                const folioTexto = reg.folio ? `<span class="bg-blue-100 text-blue-900 font-bold text-xs px-2 py-0.5 rounded border border-blue-200">${reg.folio}</span>` : '<span class="text-slate-400">S/F</span>';
+                const folioTexto = reg.folio ? `<span class="bg-slate-100 text-slate-800 font-bold text-xs px-2 py-0.5 rounded border border-slate-300">${reg.folio}</span>` : '<span class="text-slate-400">S/F</span>';
 
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors fila-historial";
