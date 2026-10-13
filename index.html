@@ -65,6 +65,8 @@
         .licencia-salida-wrap .foto-card { border: 2px solid #1a73e8; background-color: #f5f9ff; }
         .licencia-salida-wrap .foto-header-title { background-color: #1a73e8; color: #fff; font-size: 9px; padding: 3px 1px; border-bottom: none; }
 
+        .badge-folio-print { border: 1.5px solid black; padding: 3px 6px; font-size: 10.5px; font-weight: bold; border-radius: 4px; display: inline-block; background-color: #f9fafb; margin-top: 4px; }
+
         .hidden-hoja { display: none !important; }
     </style>
 </head>
@@ -95,10 +97,11 @@
 
             <div id="vista-nuevo">
                 <form id="serviceForm" class="p-6" onsubmit="generarHoja(event)">
-                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-8 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">ECONÓMICO</label><input type="text" id="inputEco" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. ECO-01"></div>
-                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">BASE / RUTA</label><input type="text" id="inputBase" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. BASE NORTE"></div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8 bg-slate-50 p-4 rounded-lg border border-slate-200">
+                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">ECONÓMICO</label><input type="text" id="inputEco" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. 3262"></div>
+                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">BASE / RUTA</label><input type="text" id="inputBase" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. RUTA 201"></div>
                         <div><label class="block text-sm font-semibold text-slate-700 mb-1">KILOMETRAJE</label><input type="number" id="inputKm" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500" placeholder="Ej. 120000"></div>
+                        <div><label class="block text-sm font-semibold text-slate-700 mb-1 text-blue-700 font-bold">FOLIO CITA</label><input type="text" id="inputFolio" class="w-full px-3 py-2 border border-blue-300 rounded focus:ring-2 focus:ring-blue-500 uppercase font-bold text-blue-800 bg-blue-50/50" placeholder="Ej. CIT-1045"></div>
                         <div><label class="block text-sm font-semibold text-slate-700 mb-1">MECÁNICO</label><input type="text" id="inputMecanico" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. LUIS"></div>
                         <div><label class="block text-sm font-semibold text-slate-700 mb-1">FECHA</label><input type="date" id="inputFecha" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase"></div>
                     </div>
@@ -144,7 +147,7 @@
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                     <h2 class="text-xl font-bold text-slate-800">Servicios Registrados</h2>
                     <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <input type="text" id="buscadorHistorial" onkeyup="filtrarHistorial()" placeholder="Buscar Económico..." class="block w-full pl-3 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm outline-none transition-shadow">
+                        <input type="text" id="buscadorHistorial" onkeyup="filtrarHistorial()" placeholder="Buscar Económico o Folio..." class="block w-full pl-3 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm outline-none transition-shadow">
                         <button onclick="descargarExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow flex items-center gap-2 transition-colors text-sm whitespace-nowrap">Descargar Excel</button>
                     </div>
                 </div>
@@ -154,6 +157,7 @@
                             <tr>
                                 <th class="px-4 py-3 text-left font-bold text-slate-600">Fecha</th>
                                 <th class="px-4 py-3 text-left font-bold text-slate-600">Económico</th>
+                                <th class="px-4 py-3 text-left font-bold text-slate-600">Folio Cita</th>
                                 <th class="px-4 py-3 text-left font-bold text-slate-600">Base / Km / Mecánico</th>
                                 <th class="px-4 py-3 text-left font-bold text-slate-600 w-1/2">Servicios Realizados</th>
                                 <th class="px-4 py-3 text-right font-bold text-slate-600">Acción</th>
@@ -201,7 +205,8 @@
                 </div>
 
                 <div style="width: 190px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;">
-                    <img src="logo_goldendragon.png" alt="Logo Golden Dragon" style="max-width: 100%; max-height: 60px; object-fit: contain;" onerror="this.src='logo_goldendragon.jpg'">
+                    <img src="logo_goldendragon.png" alt="Logo Golden Dragon" style="max-width: 100%; max-height: 52px; object-fit: contain;" onerror="this.src='logo_goldendragon.jpg'">
+                    <div class="badge-folio-print">FOLIO CITA: <span id="print-folio-servicio">--</span></div>
                 </div>
             </div>
             <div class="info-row">
@@ -250,9 +255,11 @@
 
             <div class="fr-row">
                 <span class="fr-label">NUM. ECONÓMICO:</span> 
-                <span class="fr-line-fixed" style="width: 100px;" id="fr-eco"></span>
-                <span class="fr-label" style="margin-left: 20px;">RUTA / BASE:</span> 
-                <span class="fr-line-fixed" style="width: 150px;" id="fr-base"></span>
+                <span class="fr-line-fixed" style="width: 80px;" id="fr-eco"></span>
+                <span class="fr-label" style="margin-left: 15px;">RUTA / BASE:</span> 
+                <span class="fr-line-fixed" style="width: 130px;" id="fr-base"></span>
+                <span class="fr-label" style="margin-left: 15px;">FOLIO CITA:</span> 
+                <span class="fr-line-fixed" style="width: 90px; color: #b91c1c;" id="fr-folio"></span>
             </div>
 
             <div class="fr-row">
@@ -310,7 +317,6 @@
         const db = getFirestore(app);
         const serviciosRef = collection(db, "servicios");
 
-        // NUEVA URL WEB APP DE GOOGLE APPS SCRIPT
         const URL_WEBAPP = "https://script.google.com/macros/s/AKfycbxcwxND04enMlkP5dWQW7lbQmBd7EL_nlm8MN89umtCLHYmsX7r_a7tFkmxgUnvDgAhQQ/exec";
 
         let historialGlobal = [];
@@ -325,6 +331,7 @@
         window.obsEsteticas = params.get('obsest') || "";
         window.filaExcelOrigen = params.get('fila');
         window.hojaExcelOrigen = params.get('hoja');
+        window.folioCitaParam = params.get('folio') || "";
         window.idDocFused = null;
 
         window.movimientoTipo = params.get('movimiento') || "ENTRADA";
@@ -337,7 +344,6 @@
             }).catch(e => console.log("Aviso de fetch updateLink:", e));
         }
 
-        // FUNCIÓN GLOBAL: Permite cambiar la fecha directamente desde la barra oscura superior
         window.actualizarFechaImpresion = function(nuevaFechaISO) {
             if (!nuevaFechaISO) return;
             const [year, month, day] = nuevaFechaISO.split('-');
@@ -475,6 +481,7 @@
             const economico = document.getElementById('inputEco').value.toUpperCase();
             const base = document.getElementById('inputBase').value.toUpperCase();
             const kilometraje = document.getElementById('inputKm').value;
+            const folioCita = (document.getElementById('inputFolio').value || window.folioCitaParam || "S/F").toUpperCase();
             const mecanico = document.getElementById('inputMecanico').value.toUpperCase();
             const textoComentarios = document.getElementById('inputComentarios').value.toUpperCase();
             const textoObsEsteticas = document.getElementById('inputObsEsteticas').value.toUpperCase();
@@ -502,6 +509,7 @@
             document.getElementById('print-base').innerText = base;
             document.getElementById('print-km').innerText = kilometraje ? new Intl.NumberFormat('es-MX').format(kilometraje) : "";
             document.getElementById('print-fecha').innerText = fechaString;
+            document.getElementById('print-folio-servicio').innerText = folioCita;
 
             let textoManto = "PERSONALIZADO";
             if (valorGrupo === "Correctivo") textoManto = "CORRECTIVO";
@@ -560,6 +568,7 @@
 
             document.getElementById('fr-eco').innerText = economico;
             document.getElementById('fr-base').innerText = base;
+            document.getElementById('fr-folio').innerText = folioCita;
             document.getElementById('fr-km-recepcion').innerText = kilometraje ? new Intl.NumberFormat('es-MX').format(kilometraje) : "";
 
             const esSalida = (window.movimientoTipo === "SALIDA");
@@ -654,7 +663,7 @@
 
             if(!modoSoloLectura && (serviciosMarcados.length > 0 || valorGrupo === "Correctivo")) {
                 guardarEnFirebase({ 
-                    fecha: fechaString, economico: economico, base: base, kilometraje: kilometraje,
+                    fecha: fechaString, economico: economico, base: base, kilometraje: kilometraje, folio: folioCita,
                     mecanico: mecanico, comentarios: textoComentarios, obsEsteticas: window.obsEsteticas, servicios: serviciosMarcados, grupo: grupoSeleccionado,
                     fotos: { frontal: window.urlFotoFrontal, trasera: window.urlFotoTrasera, derecha: window.urlFotoDerecha, izquierda: window.urlFotoIzquierda, licencia: window.urlFotoLicencia }
                 });
@@ -668,8 +677,7 @@
                 document.getElementById('btn-tg-servicio').style.display = 'none';
                 document.getElementById('btn-tg-ambas').style.display = 'none';
 
-                // CORRECCIÓN: Dominio oficial preservando la fecha en el enlace
-                const linkSalida = `https://desarollo-ego-movil.github.io/gestion-servicios-ego/?unidad=${encodeURIComponent(economico)}&ruta=${encodeURIComponent(base)}&km=${encodeURIComponent(kilometraje)}&fecha=${encodeURIComponent(fechaInput)}&comentarios=${encodeURIComponent(textoComentarios)}&obsest=${encodeURIComponent(window.obsEsteticas || '')}&movimiento=SALIDA&f_frontal=${encodeURIComponent(window.urlFotoFrontal)}&f_trasera=${encodeURIComponent(window.urlFotoTrasera)}&f_derecha=${encodeURIComponent(window.urlFotoDerecha)}&f_izquierda=${encodeURIComponent(window.urlFotoIzquierda)}&f_licencia=${encodeURIComponent(window.urlFotoLicencia)}`;
+                const linkSalida = `https://desarollo-ego-movil.github.io/gestion-servicios-ego/?unidad=${encodeURIComponent(economico)}&ruta=${encodeURIComponent(base)}&km=${encodeURIComponent(kilometraje)}&fecha=${encodeURIComponent(fechaInput)}&folio=${encodeURIComponent(folioCita)}&comentarios=${encodeURIComponent(textoComentarios)}&obsest=${encodeURIComponent(window.obsEsteticas || '')}&movimiento=SALIDA&f_frontal=${encodeURIComponent(window.urlFotoFrontal)}&f_trasera=${encodeURIComponent(window.urlFotoTrasera)}&f_derecha=${encodeURIComponent(window.urlFotoDerecha)}&f_izquierda=${encodeURIComponent(window.urlFotoIzquierda)}&f_licencia=${encodeURIComponent(window.urlFotoLicencia)}`;
                 actualizarLinkEnHojaExcel(linkSalida);
             } else {
                 toggleHojas('ambas');
@@ -688,7 +696,7 @@
                 if (window.idDocFused) {
                     const docRef = doc(db, "servicios", window.idDocFused);
                     await updateDoc(docRef, {
-                        economico: registro.economico, fecha: registro.fecha, base: registro.base, kilometraje: registro.kilometraje,
+                        economico: registro.economico, fecha: registro.fecha, base: registro.base, kilometraje: registro.kilometraje, folio: registro.folio || 'S/F',
                         mecanico: registro.mecanico, comentarios: registro.comentarios || '', obsEsteticas: registro.obsEsteticas || '', servicios: registro.servicios,
                         grupo: registro.grupo, fotos: registro.fotos || null, timestamp: Date.now(), estatus: estatusFinal
                     });
@@ -697,15 +705,14 @@
                     alert("✅ SERVICIO FUSIONADO Y COMPLETADO CON ÉXITO");
                 } else {
                     const docRef = await addDoc(serviciosRef, {
-                        economico: registro.economico, fecha: registro.fecha, base: registro.base, kilometraje: registro.kilometraje,
+                        economico: registro.economico, fecha: registro.fecha, base: registro.base, kilometraje: registro.kilometraje, folio: registro.folio || 'S/F',
                         mecanico: registro.mecanico, comentarios: registro.comentarios || '', obsEsteticas: registro.obsEsteticas || '', servicios: registro.servicios,
                         grupo: registro.grupo, fotos: registro.fotos || null, timestamp: Date.now(), estatus: estatusFinal
                     });
                     docIdFinal = docRef.id;
-                    if(esProgramacionOficina) alert(" BORRADOR GUARDADO. La unidad quedó pre-programada correctamente.");
+                    if(esProgramacionOficina) alert("BORRADOR GUARDADO. La unidad quedó pre-programada correctamente.");
                 }
 
-                // CORRECCIÓN: Dominio oficial unificado
                 const linkUnico = "https://desarollo-ego-movil.github.io/gestion-servicios-ego/?ver=" + docIdFinal;
                 actualizarLinkEnHojaExcel(linkUnico);
             } catch (e) { console.error("Error al guardar: ", e); }
@@ -729,6 +736,7 @@
                     document.getElementById('inputEco').value = datos.economico || '';
                     document.getElementById('inputBase').value = datos.base || '';
                     document.getElementById('inputKm').value = datos.kilometraje || '';
+                    document.getElementById('inputFolio').value = datos.folio || 'S/F';
                     document.getElementById('inputMecanico').value = datos.mecanico || '';
                     document.getElementById('inputComentarios').value = datos.comentarios || '';
                     document.getElementById('inputObsEsteticas').value = datos.obsEsteticas || '';
@@ -801,14 +809,17 @@
                 let notaComentarios = (reg.comentarios && reg.comentarios.trim() !== '') ? `<div class="mt-2 text-xs bg-amber-50 text-amber-800 border border-amber-200 p-1.5 rounded"><i class="font-bold">Comentarios:</i> ${reg.comentarios}</div>` : '';
 
                 const badgeEstatus = reg.estatus === "PROGRAMADO" ? 
-                    `<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded border border-amber-200"> Programado</span>` : 
+                    `<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded border border-amber-200">Programado</span>` : 
                     `<span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded border border-green-200">✅ Completado</span>`;
+
+                const folioTexto = reg.folio ? `<span class="bg-blue-100 text-blue-900 font-bold text-xs px-2 py-0.5 rounded border border-blue-200">${reg.folio}</span>` : '<span class="text-slate-400">S/F</span>';
 
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors fila-historial";
                 tr.innerHTML = `
                     <td class="px-4 py-4 whitespace-nowrap align-top"><div>${reg.fecha || '-'}</div><div class="text-xs text-slate-500 mt-1 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${horaStr}</div></td>
                     <td class="px-4 py-4 font-bold text-slate-900 align-top">${reg.economico || '-'}</td>
+                    <td class="px-4 py-4 align-top">${folioTexto}</td>
                     <td class="px-4 py-4 text-slate-700 align-top"><span class="block">${reg.base || '-'}</span><span class="block text-xs text-slate-500 mt-1"><i class="font-semibold">Km:</i> ${reg.kilometraje ? new Intl.NumberFormat('es-MX').format(reg.kilometraje) : 'N/A'}</span><span class="block text-xs text-slate-500"><i class="font-semibold">Mec:</i> ${reg.mecanico || 'N/A'}</span></td>
                     <td class="px-4 py-4 align-top"><div class="flex flex-wrap items-center gap-2 mb-2"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2.5 py-0.5 rounded border border-indigo-200">${reg.grupo || "Personalizado"}</span> ${badgeEstatus} <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded border border-blue-200">${(reg.servicios || []).length} marcados</span></div>${listaHTML}${notaComentarios}</td>
                     <td class="px-4 py-4 text-right align-top">
@@ -826,10 +837,10 @@
 
         window.descargarExcel = function() {
             if(historialGlobal.length === 0) { alert("No hay registros."); return; }
-            let csvContent = '\uFEFF' + "FECHA,ESTATUS,ECONOMICO,BASE,KILOMETRAJE,MECANICO,GRUPO,COMENTARIOS,OBS_ESTETICAS,CANTIDAD,MANTENIMIENTOS\n";
+            let csvContent = '\uFEFF' + "FECHA,ESTATUS,ECONOMICO,FOLIO,BASE,KILOMETRAJE,MECANICO,GRUPO,COMENTARIOS,OBS_ESTETICAS,CANTIDAD,MANTENIMIENTOS\n";
             historialGlobal.forEach(reg => {
                 let det = (reg.servicios || []).join(" / ").replace(/"/g, '""');
-                csvContent += `"${reg.fecha || ''}","${reg.estatus || 'COMPLETADO'}","${reg.economico}","${reg.base}","${reg.kilometraje}","${reg.mecanico}","${reg.grupo}","${reg.comentarios || ''}","${reg.obsEsteticas || ''}","${(reg.servicios || []).length}","${det}"\n`;
+                csvContent += `"${reg.fecha || ''}","${reg.estatus || 'COMPLETADO'}","${reg.economico}","${reg.folio || 'S/F'}","${reg.base}","${reg.kilometraje}","${reg.mecanico}","${reg.grupo}","${reg.comentarios || ''}","${reg.obsEsteticas || ''}","${(reg.servicios || []).length}","${det}"\n`;
             });
             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
@@ -840,8 +851,12 @@
             const filter = document.getElementById("buscadorHistorial").value.toUpperCase();
             const tr = document.getElementById("tabla-historial-body").getElementsByTagName("tr");
             for (let i = 0; i < tr.length; i++) {
-                let td = tr[i].getElementsByTagName("td")[1];
-                if (td) { tr[i].style.display = (td.textContent || td.innerText).toUpperCase().indexOf(filter) > -1 ? "" : "none"; }        
+                let tdEco = tr[i].getElementsByTagName("td")[1];
+                let tdFolio = tr[i].getElementsByTagName("td")[2];
+                let match = false;
+                if (tdEco && (tdEco.textContent || tdEco.innerText).toUpperCase().indexOf(filter) > -1) match = true;
+                if (tdFolio && (tdFolio.textContent || tdFolio.innerText).toUpperCase().indexOf(filter) > -1) match = true;
+                tr[i].style.display = match ? "" : "none";
             }
         };
 
@@ -854,7 +869,6 @@
                 window.cargarHojaDesdeFirebase(verId);
             } else if(params.get('unidad')) {
 
-                // LECTURA DE FECHA DIRECTA DESDE URL
                 if (params.get('fecha')) {
                     const fP = params.get('fecha');
                     if (fP.includes('-')) {
@@ -879,6 +893,7 @@
                     document.getElementById('inputEco').value = params.get('unidad') || "";
                     document.getElementById('inputBase').value = params.get('ruta') || "";
                     document.getElementById('inputKm').value = params.get('km') || "";
+                    document.getElementById('inputFolio').value = params.get('folio') || "S/F";
                     document.getElementById('inputComentarios').value = params.get('comentarios') || "";
                     document.getElementById('inputObsEsteticas').value = params.get('obsest') || "";
                     document.getElementById('inputMecanico').value = "";
@@ -921,6 +936,7 @@
                 document.getElementById('inputEco').value = uParam;
                 document.getElementById('inputBase').value = params.get('ruta') || "";
                 document.getElementById('inputKm').value = params.get('km') || "";
+                document.getElementById('inputFolio').value = params.get('folio') || "S/F";
                 document.getElementById('inputComentarios').value = params.get('comentarios') || "";
                 document.getElementById('inputObsEsteticas').value = params.get('obsest') || "";
                 document.getElementById('inputMecanico').value = "";
