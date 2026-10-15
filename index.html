@@ -26,10 +26,12 @@
         .title-section { text-align: center; margin: 0; flex-grow: 1; }
         .title-section h1 { font-size: 19px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin: 0; }
         .notificacion-correctivo { display: block; background-color: #fef2f2; color: #b91c1c; border: 2px solid #b91c1c; font-weight: bold; font-size: 13px; text-align: center; padding: 2px; margin: 6px auto 0 auto; width: 220px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        .info-row { display: flex; justify-content: center; gap: 14px; margin-bottom: 8px; font-size: 11px; font-weight: bold; }
+        
+        .info-row { display: flex; justify-content: center; gap: 16px; margin-bottom: 5px; font-size: 11px; font-weight: bold; }
         .info-field { display: flex; align-items: flex-end; }
-        .info-field span:first-child { margin-right: 2px; margin-left: 2px; }
-        .info-line { border-bottom: 1px solid black; display: inline-block; text-align: center; }
+        .info-field span:first-child { margin-right: 4px; }
+        .info-line { border-bottom: 1px solid black; display: inline-block; text-align: center; font-weight: bold; }
+
         .table-container { border: 2px solid black; width: 100%; border-collapse: collapse; }
         .table-container th, .table-container td { border: 1px solid black; padding: 2px 3px; font-size: 9px; text-align: left; line-height: 1.1; }
         .table-container th { text-align: center; background-color: #f3f4f6; padding: 2px; }
@@ -205,13 +207,19 @@
                     <img src="logo_goldendragon.png" alt="Logo Golden Dragon" style="max-width: 100%; max-height: 60px; object-fit: contain;" onerror="this.src='logo_goldendragon.jpg'">
                 </div>
             </div>
+            
+            <!-- FILA 1 DE METADATOS -->
             <div class="info-row">
-                <div class="info-field"><span>ECONOMICO.</span> <span class="info-line" id="print-eco" style="width: 60px;"></span></div>
-                <div class="info-field"><span>BASE/RUTA.</span> <span class="info-line" id="print-base" style="width: 90px;"></span></div>
-                <div class="info-field"><span>KILOMETRAJE.</span> <span class="info-line" id="print-km" style="width: 75px;"></span></div>
-                <div class="info-field"><span>FECHA.</span> <span class="info-line" id="print-fecha" style="width: 75px;"></span></div>
-                <div class="info-field"><span>FOLIO CITA.</span> <span class="info-line" id="print-folio-servicio" style="width: 95px;"></span></div>
+                <div class="info-field"><span>ECONOMICO.</span> <span class="info-line" id="print-eco" style="width: 80px;"></span></div>
+                <div class="info-field"><span>BASE/RUTA.</span> <span class="info-line" id="print-base" style="width: 180px;"></span></div>
+                <div class="info-field"><span>FOLIO CITA.</span> <span class="info-line" id="print-folio-servicio" style="width: 130px;"></span></div>
             </div>
+            <!-- FILA 2 DE METADATOS -->
+            <div class="info-row" style="margin-bottom: 9px;">
+                <div class="info-field"><span>KILOMETRAJE.</span> <span class="info-line" id="print-km" style="width: 100px;"></span></div>
+                <div class="info-field"><span>FECHA.</span> <span class="info-line" id="print-fecha" style="width: 100px;"></span></div>
+            </div>
+
             <table class="table-container">
                 <thead>
                     <tr>
@@ -256,7 +264,7 @@
                 <span class="fr-label" style="margin-left: 15px;">RUTA / BASE:</span> 
                 <span class="fr-line-fixed" style="width: 130px;" id="fr-base"></span>
                 <span class="fr-label" style="margin-left: 15px;">FOLIO CITA:</span> 
-                <span class="fr-line-fixed" style="width: 110px;" id="fr-folio"></span>
+                <span class="fr-line-fixed" style="width: 120px;" id="fr-folio"></span>
             </div>
 
             <div class="fr-row">
