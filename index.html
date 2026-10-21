@@ -2,983 +2,1633 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Generador de Servicios e.go</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>E.G.O - Sistema de Flota Pro</title>
+
+    <!-- SDK de Firebase (Compatibilidad CDN) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <!-- Generador de QR y Motor Nativo jsQR para iOS/Android -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+
     <style>
-        @media print {
-            body { background-color: white; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            #ui-container { display: none !important; }
-            #print-container { display: block !important; padding: 0 !important; box-shadow: none !important; background: transparent; }
-            .no-print { display: none !important; }
-            .salto-pagina { page-break-before: always; }
-            @media print { img { max-width: 100% !important; page-break-inside: avoid; } }
-            @page { size: letter portrait; margin: 0.4cm 1.5cm; } 
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .container { max-width: 440px; width: 100%; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); box-sizing: border-box; }
+        
+        .header-logo { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #1a73e8; padding-bottom: 10px; }
+        .logo-img { max-width: 180px; height: auto; margin-bottom: 10px; }
+        
+        h2 { color: #1a73e8; text-align: center; margin: 0; text-transform: uppercase; border-bottom: none; font-size: 20px; }
+        
+        label { display: block; margin: 15px 0 5px; font-weight: bold; color: #444; font-size: 14px; }
+        select, input, textarea { width: 100%; padding: 14px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; outline: none; }
+        select:focus, input:focus, textarea:focus { border-color: #1a73e8; }
+        
+        .btn-principal { width: 100%; padding: 16px; background-color: #1a73e8; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 17px; font-weight: bold; transition: 0.2s; margin-top: 10px; }
+        .btn-principal:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        .btn-modo { background-color: #fff; color: #1a73e8; border: 2px solid #1a73e8; margin-bottom: 12px; padding: 14px; }
+        .btn-modo:active { background-color: #1a73e8; color: white; }
+
+        .btn-foto { background-color: #34a853; margin-bottom: 10px; font-size: 14px; padding: 12px; }
+        .hidden { display: none !important; }
+        .img-preview { width: 100%; border-radius: 8px; margin-top: 5px; margin-bottom: 10px; display: none; border: 1px solid #ddd; }
+        .status { text-align: center; font-size: 14px; color: #666; margin-top: 10px; font-weight: bold; }
+
+        .aviso-salida { background-color: #fff8e1; border: 2px solid #ffb300; border-left: 6px solid #ff9800; color: #6d4c00; padding: 12px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; margin: 10px 0 5px 0; line-height: 1.4; text-align: center; animation: aparecer 0.3s ease; }
+        @keyframes aparecer { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+        #progressContainer { width: 100%; background-color: #eee; border-radius: 10px; margin-top: 15px; display: none; overflow: hidden; border: 1px solid #ddd; }
+        #progressBar { width: 0%; height: 20px; background-color: #1a73e8; transition: width 0.4s ease; }
+
+        .box-fecha-salida { background: #f8fafc; border: 2px dashed #1a73e8; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+        .box-fecha-salida label { margin-top: 0; color: #1a73e8; font-size: 14px; }
+
+        /* Estilos del Lector y Módulo QR */
+        .tarjeta-qr-pase {
+            background: #ffffff;
+            border: 2px solid #0f172a;
+            border-radius: 10px;
+            padding: 18px;
+            margin-top: 15px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .tarjeta-qr-pase h3 { margin: 0 0 10px 0; font-size: 16px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; }
+        .qr-canvas-box { display: flex; justify-content: center; margin: 12px auto; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 8px; width: fit-content; }
+        .datos-cita-resumen { text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px; font-size: 13px; line-height: 1.5; margin-top: 10px; color: #334155; }
+        .datos-cita-resumen strong { color: #0f172a; }
+
+        .badge-vigencia {
+            display: block;
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border: 1.5px solid #b91c1c;
+            border-radius: 6px;
+            font-size: 11.5px;
+            font-weight: bold;
+            padding: 6px 8px;
+            margin-top: 8px;
+            text-align: center;
         }
 
-        #print-container { display: none; width: 100%; max-width: 720px; margin: 0 auto; color: black; background-color: white; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        #contenedorLectorCamara {
+            border: 2px dashed #0284c7;
+            border-radius: 10px;
+            padding: 10px;
+            background: #f0f9ff;
+            margin-bottom: 15px;
+            text-align: center;
+        }
 
-        .formato-servicio { font-family: Arial, sans-serif; padding: 10px 30px; background: white; }
-        .hoja-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .title-section { text-align: center; margin: 0; flex-grow: 1; }
-        .title-section h1 { font-size: 19px; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; margin: 0; }
-        .notificacion-correctivo { display: block; background-color: #fef2f2; color: #b91c1c; border: 2px solid #b91c1c; font-weight: bold; font-size: 13px; text-align: center; padding: 2px; margin: 6px auto 0 auto; width: 220px; border-radius: 4px; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .info-row { display: flex; justify-content: center; gap: 16px; margin-bottom: 5px; font-size: 11px; font-weight: bold; }
-        .info-field { display: flex; align-items: flex-end; }
-        .info-field span:first-child { margin-right: 4px; }
-        .info-line { border-bottom: 1px solid black; display: inline-block; text-align: center; font-weight: bold; }
+        /* Estilos de Modales (Carátula y Estadía) */
+        .modal-fullscreen {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 99999;
+            overflow-y: auto;
+            padding: 15px;
+            box-sizing: border-box;
+        }
 
-        .table-container { border: 2px solid black; width: 100%; border-collapse: collapse; }
-        .table-container th, .table-container td { border: 1px solid black; padding: 2px 3px; font-size: 9px; text-align: left; line-height: 1.1; }
-        .table-container th { text-align: center; background-color: #f3f4f6; padding: 2px; }
-        .col-desc { width: 40%; font-weight: bold; }
-        .col-actividades { width: 15%; text-align: center !important; font-weight: bold; }
-        .col-sino { width: 15%; text-align: center !important; font-weight: bold; }
-        .col-persona { width: 30%; }
-        .footer-info { margin-top: 10px; font-size: 9px; text-align: center; line-height: 1.2; }
+        .modal-contenedor-ancho {
+            background: #ffffff;
+            max-width: 950px;
+            margin: 15px auto;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+            color: #111;
+            font-family: Arial, sans-serif;
+        }
 
-        .formato-recepcion { font-family: Arial, sans-serif; padding: 10px 30px; background: white; min-height: 25cm; display: flex; flex-direction: column; }
-        .fr-title { font-size: 13px; font-weight: bold; margin-bottom: 15px; letter-spacing: 0.5px; }
-        .fr-row { margin-bottom: 12px; font-size: 11px; display: flex; align-items: flex-end; width: 100%; }
-        .fr-label { font-weight: bold; margin-right: 5px; white-space: nowrap; }
-        .fr-line { border-bottom: 1px solid black; flex-grow: 1; min-height: 14px; text-align: center; font-weight: bold; }
-        .fr-line-fixed { border-bottom: 1px solid black; display: inline-block; text-align: center; font-weight: bold; }
-        .fr-obs-box { margin-top: 15px; flex-grow: 1; }
-        .fr-obs-title { font-size: 11px; font-weight: bold; margin-bottom: 8px; }
-        .fr-obs-line { border-bottom: 1px solid black; height: 22px; width: 100%; }
-        .fr-firmas { display: flex; justify-content: space-between; margin-top: 25px; margin-bottom: 20px; text-align: center; font-size: 10px; font-weight: bold; }
-        .fr-firma-box { width: 45%; }
+        .btn-quitar-fila {
+            background: #ff4d4f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 3px 8px;
+            font-size: 11px;
+            cursor: pointer;
+            font-weight: bold;
+        }
 
-        .grid-fila1 { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 10px; width: 100%; margin: 0 auto 10px auto; }
-        .grid-fila2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin: 0 auto 15px auto; }
-        .foto-card { border: 1px solid black; padding: 3px; text-align: center; background-color: #fafafa; box-sizing: border-box; width: 100%; }
-        .foto-header-title { font-size: 8px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid black; margin-bottom: 4px; padding-bottom: 1px; background-color: #f3f4f6; white-space: nowrap; }
-        .foto-img-element { width: 100%; display: block; object-fit: contain; object-position: center; background: #ffffff; }
-        .ratio-v   { aspect-ratio: 8 / 9; }
-        .ratio-h   { aspect-ratio: 3 / 2; }
-        .ratio-lic { aspect-ratio: 4 / 3; }
+        .tag-estadia {
+            display: inline-block;
+            padding: 3px 7px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        .estadia-verde { background-color: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+        .estadia-amarillo { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
+        .estadia-rojo { background-color: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
 
-        .licencia-salida-wrap { width: 62%; margin: 10px auto 15px auto; }
-        .licencia-salida-wrap .foto-card { border: 2px solid #1a73e8; background-color: #f5f9ff; }
-        .licencia-salida-wrap .foto-header-title { background-color: #1a73e8; color: #fff; font-size: 9px; padding: 3px 1px; border-bottom: none; }
-
-        .hidden-hoja { display: none !important; }
+        @media print {
+            body { background: white !important; padding: 0 !important; }
+            body * { visibility: hidden; }
+            .modal-fullscreen, .modal-fullscreen * { visibility: visible; }
+            .modal-fullscreen {
+                position: absolute; left: 0; top: 0; width: 100% !important; height: auto !important;
+                background: white !important; padding: 0 !important; display: block !important;
+            }
+            .modal-contenedor-ancho { max-width: 100% !important; margin: 0 !important; padding: 15px !important; box-shadow: none !important; border: none !important; }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+<body>
 
-    <div id="ui-container" class="max-w-5xl mx-auto p-6">
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div class="relative bg-[#10c86f] p-6 text-slate-900 flex justify-between items-center overflow-hidden">
-                <svg class="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-90" preserveAspectRatio="none" viewBox="0 0 1000 100">
-                    <path d="M 500,70 C 700,10 850,110 1050,40" fill="none" stroke="#ff6d01" stroke-width="32" stroke-linecap="round" />
-                    <path d="M 530,90 C 720,30 870,130 1050,60" fill="none" stroke="#ff6d01" stroke-width="12" stroke-linecap="round" opacity="0.6"/>
-                </svg>
-
-                <div class="relative z-10">
-                    <h1 class="text-2xl font-black drop-shadow-sm text-slate-900 uppercase">GESTIÓN DE SERVICIOS</h1>
-                    <p class="text-slate-800 text-sm mt-1 font-bold drop-shadow-sm">Generador y registro de órdenes.</p>
-                </div>
-
-                <div class="relative z-10 bg-white w-32 h-32 rounded-xl shadow-lg border border-green-200 flex flex-col items-center justify-center text-center p-2 shrink-0">
-                    <img src="https://res.cloudinary.com/dygb7qjgt/image/upload/v1776721918/WhatsApp_Image_2026-04-20_at_11.10.30_AM_bipr97.jpg" alt="Logo e.go" class="w-full h-full object-contain">
-                </div>
-            </div>
-
-            <div class="flex border-b border-slate-200 bg-slate-50 px-6">
-                <button onclick="cambiarPestana('nuevo')" id="tab-btn-nuevo" class="py-3 px-4 border-b-2 border-blue-600 text-blue-700 font-bold focus:outline-none transition-colors">Nuevo Servicio</button>
-                <button onclick="cambiarPestana('historial')" id="tab-btn-historial" class="py-3 px-4 text-slate-500 hover:text-blue-600 font-bold focus:outline-none transition-colors">Historial de Registros</button>
-            </div>
-
-            <div id="vista-nuevo">
-                <form id="serviceForm" class="p-6" onsubmit="generarHoja(event)">
-                    <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">ECONÓMICO</label><input type="text" id="inputEco" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. 3262"></div>
-                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">BASE / RUTA</label><input type="text" id="inputBase" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. RUTA 201"></div>
-                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">KILOMETRAJE</label><input type="number" id="inputKm" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500" placeholder="Ej. 120000"></div>
-                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">FOLIO CITA</label><input type="text" id="inputFolio" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. GD-1026-0330"></div>
-                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">MECÁNICO</label><input type="text" id="inputMecanico" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase" placeholder="Ej. LUIS"></div>
-                        <div><label class="block text-sm font-semibold text-slate-700 mb-1">FECHA</label><input type="date" id="inputFecha" class="w-full px-3 py-2 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 uppercase"></div>
-                    </div>
-
-                    <div class="mb-6 border-b border-slate-200 pb-4">
-                        <h3 class="text-lg font-bold text-slate-800 mb-3">Seleccionar Servicios a Realizar</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-                            <div class="flex items-center gap-2 bg-amber-50 px-3 py-2 rounded-lg border border-amber-200 shadow-sm w-full">
-                                <label for="inputComentarios" class="text-sm font-bold text-amber-900">Comentarios:</label>
-                                <input type="text" id="inputComentarios" class="w-full bg-transparent border-b border-amber-300 focus:border-amber-600 outline-none text-sm text-slate-800 uppercase" placeholder="Escribe aquí...">
-                            </div>
-                            <div class="flex items-center gap-2 bg-teal-50 px-3 py-2 rounded-lg border border-teal-200 shadow-sm w-full">
-                                <label for="inputObsEsteticas" class="text-sm font-bold text-teal-900 whitespace-nowrap">Obs. Estéticas:</label>
-                                <input type="text" id="inputObsEsteticas" class="w-full bg-transparent border-b border-teal-300 focus:border-teal-600 outline-none text-sm text-slate-800 uppercase" placeholder="Golpes, rayones...">
-                            </div>
-                            <div class="flex items-center gap-2 bg-blue-50 px-3 py-2 rounded-lg border border-blue-200 shadow-sm w-full">
-                                <label for="selectPaqueteM" class="text-sm font-bold text-blue-900 whitespace-nowrap">Grupo de Mtto:</label>
-                                <select id="selectPaqueteM" onchange="aplicarPaquete()" class="w-full px-2 py-1 border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 font-bold text-slate-700 cursor-pointer outline-none">
-                                    <option value="">- Seleccionar (Manual) -</option>
-                                    <option value="Correctivo">Correctivo</option>
-                                    <option value="M1">Grupo M1</option>
-                                    <option value="M2">Grupo M2</option>
-                                    <option value="M3">Grupo M3</option>
-                                    <option value="M4">Grupo M4</option>
-                                    <option value="M5">Grupo M5</option>
-                                    <option value="M6">Grupo M6</option>
-                                    <option value="M7">Grupo M7</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 mb-8" id="checkbox-container"></div>
-
-                    <div class="flex justify-end gap-4 border-t pt-6">
-                        <button type="button" onclick="limpiarFormularioCompleto()" class="px-6 py-2 border border-slate-300 rounded text-slate-600 font-semibold hover:bg-slate-50 transition-colors">Limpiar</button>
-                        <button type="submit" class="py-2 px-8 bg-blue-600 text-white rounded font-bold hover:bg-blue-700 shadow-md flex items-center gap-2 transition-colors">Generar y Guardar</button>
-                    </div>
-                </form>
-            </div>
-
-            <div id="vista-historial" class="hidden p-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
-                    <h2 class="text-xl font-bold text-slate-800">Servicios Registrados</h2>
-                    <div class="flex items-center gap-3 w-full sm:w-auto">
-                        <input type="text" id="buscadorHistorial" onkeyup="filtrarHistorial()" placeholder="Buscar Económico o Folio..." class="block w-full pl-3 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm outline-none transition-shadow">
-                        <button onclick="descargarExcel()" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg shadow flex items-center gap-2 transition-colors text-sm whitespace-nowrap">Descargar Excel</button>
-                    </div>
-                </div>
-                <div class="overflow-x-auto rounded-lg border border-slate-200">
-                    <table class="min-w-full divide-y divide-slate-200 text-sm">
-                        <thead class="bg-slate-50">
-                            <tr>
-                                <th class="px-4 py-3 text-left font-bold text-slate-600">Fecha</th>
-                                <th class="px-4 py-3 text-left font-bold text-slate-600">Económico</th>
-                                <th class="px-4 py-3 text-left font-bold text-slate-600">Folio Cita</th>
-                                <th class="px-4 py-3 text-left font-bold text-slate-600">Base / Km / Mecánico</th>
-                                <th class="px-4 py-3 text-left font-bold text-slate-600 w-1/2">Servicios Realizados</th>
-                                <th class="px-4 py-3 text-right font-bold text-slate-600">Acción</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabla-historial-body" class="bg-white divide-y divide-slate-200"></tbody>
-                    </table>
-                </div>
-                <p id="mensaje-vacio" class="text-center text-slate-500 mt-6 hidden">No hay registros guardados todavía.</p>
-            </div>
-        </div>
+<div class="container">
+    <div class="header-logo">
+        <img src="https://res.cloudinary.com/dygb7qjgt/image/upload/v1776721918/WhatsApp_Image_2026-04-20_at_11.10.30_AM_bipr97.jpg" alt="Logo Empresa" class="logo-img">
+        <h2 id="titulo">SISTEMA EGO PRO</h2>
     </div>
 
-    <div id="print-container">
-        <!-- BARRA SUPERIOR DE IMPRESIÓN CON SELECTOR INTERACTIVO DE FECHA -->
-        <div id="botones-impresion" class="no-print bg-slate-800 p-4 flex flex-col md:flex-row justify-between items-center shadow-md mb-4 sticky top-0 z-50 gap-3">
-            <button id="btn-volver-ui" onclick="volverUI()" class="px-4 py-2 bg-slate-600 text-white rounded font-bold hover:bg-slate-500 transition-colors text-sm">⬅️ Volver al Inicio</button>
-            
-            <div class="flex flex-wrap items-center justify-center gap-2">
-                <div class="flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-700 text-white text-xs font-bold">
-                    <span>📅 FECHA:</span>
-                    <input type="date" id="cambiarFechaImpresion" onchange="actualizarFechaImpresion(this.value)" class="bg-slate-800 text-white border border-slate-600 rounded px-2 py-0.5 text-xs outline-none focus:border-blue-500 cursor-pointer">
-                </div>
-
-                <div class="flex gap-1 bg-slate-900 p-1 rounded-lg border border-slate-700">
-                    <button onclick="toggleHojas('servicio')" id="btn-tg-servicio" class="px-3 py-1.5 rounded text-sm font-bold text-slate-300 hover:text-white transition-colors">1. Ver Servicio</button>
-                    <button onclick="toggleHojas('recepcion')" id="btn-tg-recepcion" class="px-3 py-1.5 rounded text-sm font-bold text-slate-300 hover:text-white transition-colors">2. Ver Recepción</button>
-                    <button onclick="toggleHojas('ambas')" id="btn-tg-ambas" class="px-3 py-1.5 rounded text-sm font-bold bg-blue-600 text-white shadow">Ambas Hojas</button>
-                </div>
-            </div>
-
-            <button onclick="window.forzarImpresioniOS()" class="px-6 py-2 bg-green-500 text-white rounded font-black hover:bg-green-600 shadow-md transition-colors text-lg flex items-center gap-2">🖨️ IMPRIMIR AHORA</button>
-        </div>
-
-        <div id="hoja-servicio-container" class="formato-servicio">
-            <div class="hoja-header">
-                <div style="width: 190px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start;">
-                    <img src="https://res.cloudinary.com/dygb7qjgt/image/upload/v1776721918/WhatsApp_Image_2026-04-20_at_11.10.30_AM_bipr97.jpg" alt="Logo e.go" style="max-width: 100%; max-height: 60px; object-fit: contain;">
-                </div>
-                
-                <div class="title-section">
-                    <h1>DESCRIPCIÓN DEL SERVICIO.</h1>
-                    <h2 id="print-grupo-manto" style="font-size: 18px; font-weight: bold; letter-spacing: 1.5px; color: #333; margin: 4px 0 0 0; text-transform: uppercase;"></h2>
-                    <div id="print-notificacion-correctivo" class="notificacion-correctivo hidden">SERVICIO CORRECTIVO</div>
-                </div>
-
-                <div style="width: 190px; display: flex; flex-direction: column; justify-content: center; align-items: flex-end;">
-                    <img src="logo_goldendragon.png" alt="Logo Golden Dragon" style="max-width: 100%; max-height: 60px; object-fit: contain;" onerror="this.src='logo_goldendragon.jpg'">
-                </div>
-            </div>
-            
-            <!-- FILA 1 DE METADATOS -->
-            <div class="info-row">
-                <div class="info-field"><span>ECONOMICO.</span> <span class="info-line" id="print-eco" style="width: 80px;"></span></div>
-                <div class="info-field"><span>BASE/RUTA.</span> <span class="info-line" id="print-base" style="width: 180px;"></span></div>
-                <div class="info-field"><span>FOLIO CITA.</span> <span class="info-line" id="print-folio-servicio" style="width: 130px;"></span></div>
-            </div>
-            <!-- FILA 2 DE METADATOS -->
-            <div class="info-row" style="margin-bottom: 9px;">
-                <div class="info-field"><span>KILOMETRAJE.</span> <span class="info-line" id="print-km" style="width: 100px;"></span></div>
-                <div class="info-field"><span>FECHA.</span> <span class="info-line" id="print-fecha" style="width: 100px;"></span></div>
-            </div>
-
-            <table class="table-container">
-                <thead>
-                    <tr>
-                        <th class="col-desc">DESCRIPCION DEL SERVICIO.</th>
-                        <th class="col-actividades">ACTIVIDADES A<br>REALIZAR</th>
-                        <th class="col-sino">ACTIVIDADES<br>REALIZADAS</th>
-                        <th class="col-persona">PERSONA QUE REALIZO Y/O<br>REVISO</th>
-                    </tr>
-                </thead>
-                <tbody id="print-table-body"></tbody>
-            </table>
-            <div style="margin-top: 10px;">
-                <div style="font-weight: bold; font-size: 10px; letter-spacing: 1px; padding-left: 2px;">COMENTARIOS.</div>
-                <div id="print-comentarios-box" style="display: flex; flex-direction: column; font-size: 10px; min-height: 80px;"></div>
-            </div>
-            <div style="margin-top: 25px; display: flex; justify-content: center;">
-                <div style="width: 250px; text-align: center;">
-                    <div style="border-bottom: 1px solid black; margin-bottom: 4px;"></div>
-                    <div style="font-weight: bold; font-size: 10px; letter-spacing: 1px;">NOMBRE Y FIRMA</div>
-                </div>
-            </div>
-            <div class="footer-info"> 
-                <strong>PRIV. SIN NOMBRE #101</strong><br>COL. TORRES DE SANTO DOMINGO<br>SAN NICOLAS DE LOS GARZA, N.L.<br>C.P. 66440
-            </div>
-        </div>
-
-        <div id="hoja-recepcion-container" class="formato-recepcion salto-pagina hidden-hoja">
-            <div class="hoja-header" style="justify-content: space-between; align-items: flex-start; margin-bottom: 4px;">
-                <div style="text-align: center; display: flex; flex-direction: column; justify-content: center; width: 190px; align-items: flex-start;">
-                    <img src="https://res.cloudinary.com/dygb7qjgt/image/upload/v1776721918/WhatsApp_Image_2026-04-20_at_11.10.30_AM_bipr97.jpg" alt="Logo e.go" style="max-width: 100%; max-height: 60px; object-fit: contain;">
-                </div>
-                <div style="text-align: center; display: flex; flex-direction: column; justify-content: center; width: 190px; align-items: flex-end;">
-                    <img src="logo_goldendragon.png" alt="Logo Golden Dragon" style="max-width: 100%; max-height: 60px; object-fit: contain;" onerror="this.src='logo_goldendragon.jpg'">
-                </div>
-            </div>
-
-            <div class="fr-title" id="fr-titulo-hoja">FORMATO RECEPCION.</div>
-
-            <div class="fr-row">
-                <span class="fr-label">NUM. ECONÓMICO:</span> 
-                <span class="fr-line-fixed" style="width: 85px;" id="fr-eco"></span>
-                <span class="fr-label" style="margin-left: 15px;">RUTA / BASE:</span> 
-                <span class="fr-line-fixed" style="width: 130px;" id="fr-base"></span>
-                <span class="fr-label" style="margin-left: 15px;">FOLIO CITA:</span> 
-                <span class="fr-line-fixed" style="width: 120px;" id="fr-folio"></span>
-            </div>
-
-            <div class="fr-row">
-                <span class="fr-label">KILOMETROS ENTRADA.</span> 
-                <span class="fr-line-fixed" style="width: 150px;" id="fr-km-recepcion"></span>
-            </div>
-
-            <div class="fr-label" id="fr-label-carroceria" style="margin-top: 20px; margin-bottom: 10px;">ESTATUS CARROCERÍA (EVIDENCIAS FOTOGRÁFICAS)</div>
-            
-            <div class="grid-fila1" id="fr-grid-fila1">
-                <div class="foto-card"><div class="foto-header-title">1. VISTA FRONTAL</div><img id="img-front" src="" class="foto-img-element ratio-v" onerror="this.src='https://placehold.co/300x340?text=Sin+Foto+Frontal'"></div>
-                <div class="foto-card"><div class="foto-header-title">5. LICENCIA OPERADOR</div><img id="img-licencia" src="" class="foto-img-element ratio-lic" onerror="this.src='https://placehold.co/400x300?text=Sin+Foto+Licencia'"></div>
-                <div class="foto-card"><div class="foto-header-title">2. VISTA TRASERA</div><img id="img-back" src="" class="foto-img-element ratio-v" onerror="this.src='https://placehold.co/300x340?text=Sin+Foto+Trasera'"></div>
-            </div>
-            <div class="grid-fila2" id="fr-grid-fila2">
-                <div class="foto-card"><div class="foto-header-title">3. LATERAL DERECHO</div><img id="img-right" src="" class="foto-img-element ratio-h" onerror="this.src='https://placehold.co/400x267?text=Sin+Foto+Der'"></div>
-                <div class="foto-card"><div class="foto-header-title">4. LATERAL IZQUIERDO</div><img id="img-left" src="" class="foto-img-element ratio-h" onerror="this.src='https://placehold.co/400x267?text=Sin+Foto+Izq'"></div>
-            </div>
-
-            <div class="licencia-salida-wrap hidden-hoja" id="fr-licencia-salida">
-                <div class="fr-label" style="margin-top: 20px; margin-bottom: 10px; text-align: center; display: block;">LICENCIA DEL OPERADOR (EVIDENCIA DE SALIDA)</div>
-                <div class="foto-card">
-                    <div class="foto-header-title">LICENCIA OPERADOR</div>
-                    <img id="img-licencia-salida" src="" class="foto-img-element ratio-lic" onerror="this.src='https://placehold.co/400x300?text=Sin+Foto+Licencia'">
-                </div>
-            </div>
-
-            <div class="fr-obs-box" id="fr-caja-obs-recepcion">
-                <div class="fr-obs-title">OBSERVACIONES.</div>
-                <div class="fr-obs-line"></div><div class="fr-obs-line"></div><div class="fr-obs-line"></div><div class="fr-obs-line"></div>
-            </div>
-
-            <div class="fr-firmas" id="fr-firmas-container"></div>
-
-            <div class="footer-info" style="margin-bottom: 15px;"> 
-                <strong>PRIV. SIN NOMBRE #101</strong><br>COL. TORRES DE SANTO DOMINGO<br>SAN NICOLAS DE LOS GARZA, N.L.<br>C.P. 66440
-            </div>
-        </div>
+    <!-- LOGIN -->
+    <div id="sec-pass">
+        <label>Contraseña de Acceso:</label>
+        <input type="text" id="passInput" placeholder="Escribe aquí..." style="-webkit-text-security: disc;">
+        <button class="btn-principal" onclick="verificarPass()">INGRESAR</button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, deleteDoc, doc, getDoc, where, limit, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <!-- MENÚ PRINCIPAL -->
+    <div id="sec-seleccion" class="hidden">
+        <label style="text-align: center; margin-bottom: 15px;">Seleccione una función operativa:</label>
+        
+        <button class="btn-principal btn-modo" onclick="abrirFormulario('ENTRADA')">📥 ENTRADA DE UNIDAD</button>
+        <button class="btn-principal btn-modo" onclick="abrirFormulario('SALIDA')">📤 SALIDA DE UNIDAD</button>
+        
+        <!-- MÓDULO ESTADÍA PATIO -->
+        <button class="btn-principal btn-modo" style="border-color: #0d9488; color: #0d9488; background: #f0fdfa;" onclick="abrirModalEstadia()">⏱️ ÍNDICE DE ESTADÍA (EN PATIO)</button>
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDLywqH8iBbnlSwwRFhWVbZ4mjEkz6Xs_8", 
-            authDomain: "gestion-servicios-ego.firebaseapp.com", 
-            projectId: "gestion-servicios-ego",
-            storageBucket: "gestion-servicios-ego.firebasestorage.app",
-            messagingSenderId: "378018276879",
-            appId: "1:378018276879:web:310b4d30b0d3d4e8c6257a"
-        };
+        <button class="btn-principal btn-modo" style="border-color: #0284c7; color: #0284c7; background: #f0f9ff;" onclick="abrirGeneradorCitas()">🎟️ GENERAR CITA PREVIA (QR)</button>
+        <button class="btn-principal btn-modo" style="border-color: #34a853; color: #34a853;" onclick="window.location.href='mantenimiento.html'">🔧 HOJA DE MANTENIMIENTO</button>
+        <button class="btn-principal btn-modo" style="border-color: #ff9800; color: #ff9800; margin-top: 5px;" onclick="window.open('https://desarollo-ego-movil.github.io/gestion-servicios-ego/', '_blank')">📋 PROGRAMAR HOJA DE SERVICIO</button>
+        <button class="btn-principal btn-modo" style="border-color: #673ab7; color: #673ab7; margin-top: 5px;" onclick="abrirCaratulaModal()">📄 CARÁTULA DE ENTREGA (SALIDAS)</button>
+    </div>
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const serviciosRef = collection(db, "servicios");
+    <!-- GENERADOR DE CITA CON QR -->
+    <div id="sec-generar-cita" class="hidden">
+        <div style="background: #f0f9ff; border: 2px dashed #0284c7; border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center;">
+            <strong style="color: #0369a1; font-size: 14px;">PROGRAMACIÓN DE CITA Y PASE DIGITAL</strong>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #475569;">El pase solo será válido el día programado. No se admiten unidades vencidas.</p>
+        </div>
 
-        const URL_WEBAPP = "https://script.google.com/macros/s/AKfycbxcwxND04enMlkP5dWQW7lbQmBd7EL_nlm8MN89umtCLHYmsX7r_a7tFkmxgUnvDgAhQQ/exec";
+        <label>1. Número de Unidad:</label>
+        <input type="text" id="citaUnidad" placeholder="Ej: 3206" oninput="autocompletarRutaCita(this.value)">
 
-        let historialGlobal = [];
-        let modoSoloLectura = false;
+        <label>2. Ruta Asignada:</label>
+        <input type="text" id="citaRuta" placeholder="Se detecta automáticamente..." readonly style="background-color: #f8fafc; font-weight: bold; color: #1e293b;">
 
-        const params = new URLSearchParams(window.location.search);
-        window.urlFotoFrontal = params.get('f_frontal') || "";
-        window.urlFotoTrasera = params.get('f_trasera') || "";
-        window.urlFotoDerecha = params.get('f_derecha') || "";
-        window.urlFotoIzquierda = params.get('f_izquierda') || "";
-        window.urlFotoLicencia = params.get('f_licencia') || "";
-        window.obsEsteticas = params.get('obsest') || "";
-        window.filaExcelOrigen = params.get('fila');
-        window.hojaExcelOrigen = params.get('hoja');
-        window.folioCitaParam = params.get('folio') || "";
-        window.idDocFused = null;
+        <label>3. Fecha Programada para la Cita:</label>
+        <input type="date" id="citaFechaProgramada">
 
-        window.movimientoTipo = params.get('movimiento') || "ENTRADA";
+        <div style="display: flex; justify-content: space-between; align-items: flex-end; gap: 8px;">
+            <div style="flex: 1;">
+                <label style="margin-top: 5px;">4. Folio de Cita:</label>
+                <input type="text" id="citaFolio" placeholder="Ej: CIT-3206-01" style="text-transform: uppercase; margin-bottom: 0;">
+            </div>
+            <button type="button" class="btn-principal" style="width: auto; padding: 13px 14px; margin-top: 0; font-size: 12px; background: #475569;" onclick="generarFolioAutomatico()">⚡ Auto</button>
+        </div>
 
-        function actualizarLinkEnHojaExcel(link) {
-            if (!window.filaExcelOrigen || !window.hojaExcelOrigen) return;
-            fetch(URL_WEBAPP, {
-                method: 'POST', mode: 'no-cors',
-                body: JSON.stringify({ action: "updateLink", hoja: window.hojaExcelOrigen, fila: window.filaExcelOrigen, link: link })
-            }).catch(e => console.log("Aviso de fetch updateLink:", e));
-        }
+        <label>5. Tipo de Trabajo / Mantenimiento:</label>
+        <select id="citaTipoManto">
+            <option value="PREVENTIVO (M1)">PREVENTIVO (M1)</option>
+            <option value="PREVENTIVO (M2)">PREVENTIVO (M2)</option>
+            <option value="PREVENTIVO (M3)">PREVENTIVO (M3)</option>
+            <option value="PREVENTIVO (M4)">PREVENTIVO (M4)</option>
+            <option value="PREVENTIVO (M5)">PREVENTIVO (M5)</option>
+            <option value="PREVENTIVO (M6)">PREVENTIVO (M6)</option>
+            <option value="PREVENTIVO (M7)">PREVENTIVO (M7)</option>
+            <option value="CORRECTIVO">CORRECTIVO</option>
+        </select>
 
-        window.actualizarFechaImpresion = function(nuevaFechaISO) {
-            if (!nuevaFechaISO) return;
-            const [year, month, day] = nuevaFechaISO.split('-');
-            const fechaFormateada = `${day}/${month}/${year}`;
+        <label>6. Observaciones / Motivo de Cita:</label>
+        <textarea id="citaMotivo" style="height: 60px;" placeholder="Ej: Fuga de aire, cambio de balatas o servicio regular..."></textarea>
+
+        <button class="btn-principal" style="background-color: #0284c7;" onclick="procesarCreacionPaseQR()">📲 GENERAR CÓDIGO QR</button>
+
+        <div id="cajaResultadoPaseQR" class="tarjeta-qr-pase hidden">
+            <h3>PASE DE ENTRADA A PATIO</h3>
+            <div class="qr-canvas-box" id="contenedorQrCanvas"></div>
             
-            const pF = document.getElementById('print-fecha');
-            if (pF) pF.innerText = fechaFormateada;
+            <div class="datos-cita-resumen" id="textoResumenPase"></div>
 
-            document.querySelectorAll('.firma-fecha-texto').forEach(el => {
-                el.innerText = fechaFormateada;
-            });
+            <div class="badge-vigencia" id="badgeTextoVigencia">
+                ⚠️ VÁLIDO ÚNICAMENTE EL DÍA PROGRAMADO
+            </div>
 
-            const inF = document.getElementById('inputFecha');
-            if (inF) inF.value = nuevaFechaISO;
-        };
-
-        const listaServicios = [
-            "CAMBIO DE ACEITE DE MOTOR", "CAMBIO DE FILTRO DE ACEITE MOTOR", "CAMBIO DE FILTRO DE AIRE",
-            "FILTRO DE GAS DE ALTA PRESION", "FILTRO DE GAS BAJA PRESION ZONA DE POSTENFRIADOR",
-            "FILTRO DE GAS BAJA PRESION ZONA MOTOR", "%DEGRADO DE ANTICONGELANTE", "NIVEL DE ANTICONGELANTE",
-            "NIVEL ACEITE DE TRANSMISION", "CAMBIO ACEITE TRANSMISION", "CAMBIO FILTROS DE TRANSMISION",
-            "REVISION NIVEL ACEITE DIFERENCIAL", "CAMBIO DE ACEITE DIFERENCIAL", "ENGRASADO DE PUERTAS DE SERVICIO DELANTERAS",
-            "ENGRASADO PUERTAS SERVICIO TRASERAS", "ENGRASADO POLEAS TENSORAS A.A", "ENGRASADO DE CRUCETAS BARRA CARDAN",
-            "ENGRASADO PERNO DE DIRECCION", "ENGRASADO DE TERMINALES DE DIRECCION", "ENGRASADO DE MATRACAS",
-            "CAMBIO DE ANTICONGELANTE", "REVISION DE BALEROS", "CAMBIO DE BALEROS", "REVISION DE BALATAS",
-            "CAMBIO DE BALATAS TRASERAS", "CAMBIO DE BALATAS DELANTERAS", "CAMBIO DE FILTRO HIDRAULICO",
-            "CAMBIO DE FILTRO DE SECADOR", "CAMBIO DE SECADOR COMPLETO", "APRIETE DE TERMINALES",
-            "REVISION SEMESTRAL DE CLIMA", "REVISION DE SISTEMA ELECTRICO", "CAMBIO DE CABLES Y BUJIAS"
-        ];
-
-        const configuracionPaquetes = {
-            "M1": ["CAMBIO DE ACEITE DE MOTOR", "CAMBIO DE FILTRO DE ACEITE MOTOR", "CAMBIO DE FILTRO DE AIRE", "ENGRASADO DE PUERTAS DE SERVICIO DELANTERAS", "ENGRASADO PUERTAS SERVICIO TRASERAS", "ENGRASADO POLEAS TENSORAS A.A", "ENGRASADO DE CRUCETAS BARRA CARDAN", "ENGRASADO PERNO DE DIRECCION", "ENGRASADO DE TERMINALES DE DIRECCION", "ENGRASADO DE MATRACAS", "REVISION DE BALATAS", "REVISION SEMESTRAL DE CLIMA"],
-            "M2": ["CAMBIO DE ACEITE DE MOTOR", "CAMBIO DE FILTRO DE ACEITE MOTOR", "CAMBIO DE FILTRO DE AIRE", "ENGRASADO DE PUERTAS DE SERVICIO DELANTERAS", "ENGRASADO PUERTAS SERVICIO TRASERAS", "ENGRASADO POLEAS TENSORAS A.A", "ENGRASADO DE CRUCETAS BARRA CARDAN", "ENGRASADO PERNO DE DIRECCION", "ENGRASADO DE TERMINALES DE DIRECCION", "ENGRASADO DE MATRACAS", "REVISION DE BALATAS", "REVISION DE BALEROS", "CAMBIO DE BALEROS", "CAMBIO DE FILTRO DE SECADOR", "REVISION SEMESTRAL DE CLIMA", "CAMBIO FILTROS DE TRANSMISION", "NIVEL ACEITE DE TRANSMISION", "FILTRO DE GAS DE ALTA PRESION", "FILTRO DE GAS BAJA PRESION ZONA DE POSTENFRIADOR", "FILTRO DE GAS BAJA PRESION ZONA MOTOR"],
-            "M3": ["CAMBIO DE ACEITE DE MOTOR", "CAMBIO DE FILTRO DE ACEITE MOTOR", "CAMBIO DE FILTRO DE AIRE", "ENGRASADO DE PUERTAS DE SERVICIO DELANTERAS", "ENGRASADO PUERTAS SERVICIO TRASERAS", "ENGRASADO POLEAS TENSORAS A.A", "ENGRASADO DE CRUCETAS BARRA CARDAN", "ENGRASADO PERNO DE DIRECCION", "ENGRASADO DE TERMINALES DE DIRECCION", "ENGRASADO DE MATRACAS", "REVISION DE BALATAS", "CAMBIO DE BALATAS DELANTERAS", "CAMBIO DE BALATAS TRASERAS", "REVISION NIVEL ACEITE DIFERENCIAL", "CAMBIO DE ACEITE DIFERENCIAL", "APRIETE DE TERMINALES"],
-            "M4": ["CAMBIO DE ACEITE DE MOTOR", "CAMBIO DE FILTRO DE ACEITE MOTOR", "CAMBIO DE FILTRO DE AIRE", "ENGRASADO DE PUERTAS DE SERVICIO DELANTERAS", "ENGRASADO PUERTAS SERVICIO TRASERAS", "ENGRASADO POLEAS TENSORAS A.A", "ENGRASADO DE CRUCETAS BARRA CARDAN", "ENGRASADO PERNO DE DIRECCION", "ENGRASADO DE TERMINALES DE DIRECCION", "ENGRASADO DE MATRACAS", "REVISION DE BALATAS", "%DEGRADO DE ANTICONGELANTE", "NIVEL DE ANTICONGELANTE", "CAMBIO DE ANTICONGELANTE"],
-            "M5": ["CAMBIO DE ACEITE DE MOTOR", "CAMBIO DE FILTRO DE ACEITE MOTOR", "CAMBIO DE FILTRO DE AIRE", "ENGRASADO DE PUERTAS DE SERVICIO DELANTERAS", "ENGRASADO PUERTAS SERVICIO TRASERAS", "ENGRASADO POLEAS TENSORAS A.A", "ENGRASADO DE CRUCETAS BARRA CARDAN", "ENGRASADO PERNO DE DIRECCION", "ENGRASADO DE TERMINALES DE DIRECCION", "ENGRASADO DE MATRACAS", "REVISION DE BALATAS", "CAMBIO DE BALATAS DELANTERAS", "CAMBIO DE BALATAS TRASERAS", "REVISION DE BALEROS", "CAMBIO DE BALEROS", "CAMBIO FILTROS DE TRANSMISION", "NIVEL ACEITE DE TRANSMISION", "CAMBIO ACEITE TRANSMISION", "CAMBIO DE SECADOR COMPLETO", "REVISION SEMESTRAL DE CLIMA", "REVISION DE SISTEMA ELECTRICO", "CAMBIO DE CABLES Y BUJIAS", "FILTRO DE GAS DE ALTA PRESION", "FILTRO DE GAS BAJA PRESION ZONA DE POSTENFRIADOR", "FILTRO DE GAS BAJA PRESION ZONA MOTOR"],
-            "M6": ["CAMBIO DE ACEITE DE MOTOR", "CAMBIO DE FILTRO DE ACEITE MOTOR", "CAMBIO DE FILTRO DE AIRE", "ENGRASADO DE PUERTAS DE SERVICIO DELANTERAS", "ENGRASADO PUERTAS SERVICIO TRASERAS", "ENGRASADO POLEAS TENSORAS A.A", "ENGRASADO DE CRUCETAS BARRA CARDAN", "ENGRASADO PERNO DE DIRECCION", "ENGRASADO DE TERMINALES DE DIRECCION", "ENGRASADO DE MATRACAS", "REVISION DE BALATAS", "REVISION DE BALEROS", "CAMBIO DE BALEROS", "CAMBIO DE FILTRO DE SECADOR", "REVISION SEMESTRAL DE CLIMA", "CAMBIO FILTROS DE TRANSMISION", "NIVEL ACEITE DE TRANSMISION", "FILTRO DE GAS DE ALTA PRESION", "FILTRO DE GAS BAJA PRESION ZONA DE POSTENFRIADOR", "FILTRO DE GAS BAJA PRESION ZONA MOTOR", "CAMBIO DE FILTRO HIDRAULICO"],
-            "M7": [
-                "CAMBIO DE ACEITE DE MOTOR", "CAMBIO DE FILTRO DE ACEITE MOTOR", "CAMBIO DE FILTRO DE AIRE",
-                "FILTRO DE GAS DE ALTA PRESION", "FILTRO DE GAS BAJA PRESION ZONA DE POSTENFRIADOR", "FILTRO DE GAS BAJA PRESION ZONA MOTOR",
-                "NIVEL ACEITE DE TRANSMISION", "CAMBIO ACEITE TRANSMISION", "CAMBIO FILTROS DE TRANSMISION",
-                "REVISION NIVEL ACEITE DIFERENCIAL", "CAMBIO DE ACEITE DIFERENCIAL",
-                "ENGRASADO DE PUERTAS DE SERVICIO DELANTERAS", "ENGRASADO PUERTAS SERVICIO TRASERAS", "ENGRASADO POLEAS TENSORAS A.A",
-                "ENGRASADO DE CRUCETAS BARRA CARDAN", "ENGRASADO PERNO DE DIRECCION", "ENGRASADO DE TERMINALES DE DIRECCION", "ENGRASADO DE MATRACAS",
-                "REVISION DE BALEROS", "CAMBIO DE BALEROS", "REVISION DE BALATAS", "CAMBIO DE BALATAS DELANTERAS", "CAMBIO DE BALATAS TRASERAS",
-                "CAMBIO DE SECADOR COMPLETO", "REVISION DE SISTEMA ELECTRICO", "CAMBIO DE CABLES Y BUJIAS"
-            ]
-        };
-
-        window.aplicarPaquete = function() {
-            const paqueteSeleccionado = document.getElementById('selectPaqueteM').value;
-            listaServicios.forEach((_, index) => {
-                const chk = document.getElementById(`chk_${index}`);
-                if (chk) chk.checked = false; 
-            });
-            if (paqueteSeleccionado && configuracionPaquetes[paqueteSeleccionado]) {
-                configuracionPaquetes[paqueteSeleccionado].forEach(s => {
-                    const idx = listaServicios.indexOf(s);
-                    const chk = document.getElementById(`chk_${idx}`);
-                    if(idx !== -1 && chk) chk.checked = true; 
-                });
-            }
-        };
-
-        window.limpiarFormularioCompleto = function() {
-            document.getElementById('serviceForm').reset();
-            document.getElementById('selectPaqueteM').value = ""; 
-            restaurarFecha();
-            window.idDocFused = null;
-        };
-
-        function restaurarFecha() {
-            const tzoffset = (new Date()).getTimezoneOffset() * 60000;
-            const localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, 10);
-            if(document.getElementById('inputFecha')) document.getElementById('inputFecha').value = localISOTime;
-            if(document.getElementById('cambiarFechaImpresion')) document.getElementById('cambiarFechaImpresion').value = localISOTime;
-        }
-
-        function cargarCheckboxes() {
-            const containerUI = document.getElementById('checkbox-container');
-            if(!containerUI) return;
-            containerUI.innerHTML = ''; 
-            listaServicios.forEach((servicio, index) => {
-                const div = document.createElement('div');
-                div.className = "flex items-start gap-2 hover:bg-blue-50 p-1 rounded transition-colors";
-                div.innerHTML = `
-                    <input type="checkbox" id="chk_${index}" value="${index}" class="mt-1 w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer">
-                    <label for="chk_${index}" class="text-sm text-gray-700 cursor-pointer select-none leading-tight">${servicio}</label>
-                `;
-                containerUI.appendChild(div);
-            });
-        }
-
-        window.cambiarPestana = function(pestana) {
-            const vNuevo = document.getElementById('vista-nuevo');
-            const vHistorial = document.getElementById('vista-historial');
-            const btnNuevo = document.getElementById('tab-btn-nuevo');
-            const btnHistorial = document.getElementById('tab-btn-historial');
-
-            if(pestana === 'nuevo') {
-                vNuevo.classList.remove('hidden'); vHistorial.classList.add('hidden');
-                btnNuevo.classList.add('border-b-2', 'border-blue-600', 'text-blue-700'); btnNuevo.classList.remove('text-slate-500');
-                btnHistorial.classList.remove('border-b-2', 'border-blue-600', 'text-blue-700'); btnHistorial.classList.add('text-slate-500');
-            } else {
-                vNuevo.classList.add('hidden'); vHistorial.classList.remove('hidden');
-                btnHistorial.classList.add('border-b-2', 'border-blue-600', 'text-blue-700'); btnHistorial.classList.remove('text-slate-500');
-                btnNuevo.classList.remove('border-b-2', 'border-blue-600', 'text-blue-700'); btnNuevo.classList.add('text-slate-500');
-            }
-        };
-
-        window.toggleHojas = function(vista) {
-            const hojaS = document.getElementById('hoja-servicio-container');
-            const hojaR = document.getElementById('hoja-recepcion-container');
-            const btnS = document.getElementById('btn-tg-servicio');
-            const btnR = document.getElementById('btn-tg-recepcion');
-            const btnA = document.getElementById('btn-tg-ambas');
-
-            [btnS, btnR, btnA].forEach(b => { b.classList.remove('bg-blue-600', 'text-white', 'shadow'); b.classList.add('text-slate-300'); });
-
-            if (vista === 'servicio') {
-                hojaS.classList.remove('hidden-hoja'); hojaR.classList.add('hidden-hoja');
-                btnS.classList.add('bg-blue-600', 'text-white', 'shadow'); btnS.classList.remove('text-slate-300');
-            } else if (vista === 'recepcion') {
-                hojaS.classList.add('hidden-hoja'); hojaR.classList.remove('hidden-hoja');
-                btnR.classList.add('bg-blue-600', 'text-white', 'shadow'); btnR.classList.remove('text-slate-300');
-            } else {
-                hojaS.classList.remove('hidden-hoja'); hojaR.classList.remove('hidden-hoja');
-                btnA.classList.add('bg-blue-600', 'text-white', 'shadow'); btnA.classList.remove('text-slate-300');
-            }
-        };
-
-        window.generarHoja = function(e) {
-            if(e) e.preventDefault();
-
-            const economico = document.getElementById('inputEco').value.toUpperCase();
-            const base = document.getElementById('inputBase').value.toUpperCase();
-            const kilometraje = document.getElementById('inputKm').value;
-            const folioCita = (document.getElementById('inputFolio').value || window.folioCitaParam || "S/F").toUpperCase();
-            const mecanico = document.getElementById('inputMecanico').value.toUpperCase();
-            const textoComentarios = document.getElementById('inputComentarios').value.toUpperCase();
-            const textoObsEsteticas = document.getElementById('inputObsEsteticas').value.toUpperCase();
+            <p style="font-size: 11px; color: #64748b; margin: 8px 0 12px 0;">Si la unidad no se presenta en su fecha, la cita queda cancelada automáticamente.</p>
             
-            if (textoObsEsteticas.trim() !== "") { window.obsEsteticas = textoObsEsteticas; }
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <button type="button" class="btn-principal" style="background-color: #0284c7; padding: 12px; font-size: 13px; margin-top: 0; flex: 1;" onclick="descargarPaseComoImagen()">📸 Guardar QR</button>
+                <button type="button" class="btn-principal" style="background-color: #25d366; padding: 12px; font-size: 13px; margin-top: 0; flex: 1;" onclick="compartirPaseWhatsApp()">💬 Enviar Texto</button>
+            </div>
+        </div>
 
-            const selectElement = document.getElementById('selectPaqueteM');
-            const valorGrupo = selectElement.value; 
-            let grupoSeleccionado = selectElement.options[selectElement.selectedIndex].text; 
+        <button class="btn-principal" style="background-color: #64748b; font-size: 14px; margin-top: 15px;" onclick="volverAlMenuPrincipal()">⬅️ VOLVER AL MENÚ</button>
+    </div>
 
-            if (grupoSeleccionado === "- Seleccionar (Manual) -" || document.getElementById('selectPaqueteM').value === "") {
-                grupoSeleccionado = "Personalizado";
+    <!-- FORMULARIO DE ENTRADA / SALIDA REGULAR -->
+    <div id="sec-form" class="hidden">
+        
+        <!-- VISOR CÁMARA JSQR -->
+        <div id="contenedorLectorCamara" class="hidden">
+            <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: bold; color: #0369a1;">📷 Apunta la cámara al QR del operador:</p>
+            <div style="position: relative; width: 100%; border-radius: 8px; overflow: hidden; background: black;">
+                <video id="videoLector" playsinline muted autoplay style="width: 100%; height: auto; display: block;"></video>
+                <canvas id="canvasLector" class="hidden"></canvas>
+            </div>
+            
+            <input type="file" id="archivoQrInput" accept="image/*" class="hidden" onchange="escanearDesdeArchivo(this)">
+            
+            <div style="display: flex; gap: 8px; margin-top: 8px;">
+                <button type="button" class="btn-principal" style="background: #0284c7; font-size: 12px; padding: 10px; margin-top: 0; flex: 1;" onclick="document.getElementById('archivoQrInput').click()">🖼️ Cargar Foto QR</button>
+                <button type="button" class="btn-principal" style="background: #ef4444; font-size: 12px; padding: 10px; margin-top: 0; flex: 1;" onclick="detenerEscaneoQR()">✕ Cerrar</button>
+            </div>
+        </div>
+
+        <!-- BOTÓN DE ESCÁNER DE QR ENTRADA -->
+        <button id="btnActivarLectorQR" type="button" class="btn-principal" style="background-color: #0284c7; margin-bottom: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;" onclick="iniciarEscaneoQR()">
+            <span>📷</span> ESCANEAR QR DE CITA (AUTOLLENADO)
+        </button>
+
+        <!-- FECHA DEL MOVIMIENTO (ENTRADA O SALIDA) -->
+        <div id="div-fecha-movimiento" class="box-fecha-salida">
+            <label id="lblFechaMovimiento">📅 Fecha del Movimiento:</label>
+            <input type="date" id="fechaMovimientoPersonalizada" style="margin-bottom: 0;">
+        </div>
+
+        <label>1. Seleccione la Ruta:</label>
+        <select id="ruta" onchange="actualizarUnidades()">
+            <option value="">-- Seleccionar --</option>
+            <option value="AEROPUERTO Y GRIEGA">AEROPUERTO Y GRIEGA</option>
+            <option value="EXPO AEROPUERTO">EXPO AEROPUERTO</option>
+            <option value="ALIANZA REAL">ALIANZA REAL</option>
+            <option value="CIENEGA DE FLORES">CIENEGA DE FLORES</option>
+            <option value="Nuevas Unidades">Nuevas Unidades</option>
+            <option value="PALMIRAS">PALMIRAS</option>
+            <option value="PRO VIVIENDA">PRO VIVIENDA</option>
+            <option value="RUTA 1">RUTA 1</option>
+            <option value="RUTA 2">RUTA 2</option>
+            <option value="RUTA 13">RUTA 13</option>
+            <option value="RUTA 20">RUTA 20</option>
+            <option value="RUTA 39">RUTA 39</option>
+            <option value="RUTA 41">RUTA 41</option>
+            <option value="RUTA 68">RUTA 68</option>
+            <option value="RUTA 109">RUTA 109</option>
+            <option value="RUTA 117">RUTA 117</option>
+            <option value="RUTA 160">RUTA 160</option>
+            <option value="RUTA 201">RUTA 201</option>
+            <option value="RUTA 218">RUTA 218</option>
+            <option value="RUTA 223">RUTA 223</option>
+            <option value="RUTA 227">RUTA 227</option>
+            <option value="RUTA 228">RUTA 228</option>
+            <option value="RUTA 233">RUTA 233</option>
+            <option value="RUTA 310">RUTA 310</option>
+            <option value="RUTA 311">RUTA 311</option>
+            <option value="RUTA 313">RUTA 313</option>
+            <option value="RUTA 527">RUTA 527</option>
+            <option value="RUTA 601">RUTA 601</option>
+            <option value="Ruta 685/198">Ruta 685/198</option>
+            <option value="VALLE SOLEADO">VALLE SOLEADO</option>
+            <option value="VISTAS DEL CARMEN">VISTAS DEL CARMEN</option>
+        </select>
+
+        <label>2. Seleccione la Unidad:</label>
+        <select id="unidad"><option value="">-- Elija ruta --</option></select>
+
+        <label>3. Kilometraje Actual:</label>
+        <input type="number" id="km" placeholder="Ej: 150000" inputmode="numeric">
+
+        <!-- Folio Cita (ENTRADA) -->
+        <div id="div-folio" class="hidden">
+            <label>3.1. Folio de Cita Previa:</label>
+            <input type="text" id="folioCita" placeholder="Ej: CIT-1045 o Folio asignado" style="text-transform: uppercase;">
+        </div>
+
+        <!-- Manto (SALIDA) -->
+        <div id="div-manto-salida" class="hidden">
+            <label style="color: #c2410c;">3.2. Tipo de Mantenimiento Liberado:</label>
+            <select id="mantoSalida" style="border-color: #f97316; font-weight: bold;">
+                <option value="">-- Seleccionar Tipo --</option>
+                <option value="PREVENTIVO">PREVENTIVO</option>
+                <option value="CORRECTIVO">CORRECTIVO</option>
+            </select>
+        </div>
+
+        <label>4. Evidencias (Fotos):</label>
+
+        <div id="aviso-salida" class="aviso-salida hidden">
+            📤 En <strong>SALIDA</strong> solo se requiere la <strong>LICENCIA DEL OPERADOR</strong>.<br>
+            No es necesario tomar fotos de la unidad.
+        </div>
+        
+        <div id="fotos-entrada" class="hidden">
+            <input type="file" id="fotoInput" accept="image/*" capture="environment" class="hidden" onchange="mostrarPreview(this, 'previewOdo')">
+            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoInput').click()">📸 FOTO ODÓMETRO</button>
+            <img id="previewOdo" class="img-preview">
+
+            <input type="file" id="fotoFrontal" accept="image/*" capture="environment" class="hidden" onchange="mostrarPreview(this, 'previewFrontal')">
+            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoFrontal').click()">📸 FOTO FRONTAL</button>
+            <img id="previewFrontal" class="img-preview">
+
+            <input type="file" id="fotoVin" accept="image/*" capture="environment" class="hidden" onchange="mostrarPreview(this, 'previewVin')">
+            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoVin').click()">📸 FOTO VIN (SERIE)</button>
+            <img id="previewVin" class="img-preview">
+
+            <input type="file" id="fotoTrasera" accept="image/*" capture="environment" class="hidden" onchange="mostrarPreview(this, 'previewTrasera')">
+            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoTrasera').click()">📸 PARTE TRASERA</button>
+            <img id="previewTrasera" class="img-preview">
+
+            <input type="file" id="fotoDerecha" accept="image/*" capture="environment" class="hidden" onchange="mostrarPreview(this, 'previewDerecha')">
+            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoDerecha').click()">📸 LATERAL DERECHO</button>
+            <img id="previewDerecha" class="img-preview">
+
+            <input type="file" id="fotoIzquierda" accept="image/*" capture="environment" class="hidden" onchange="mostrarPreview(this, 'previewIzquierda')">
+            <button class="btn-principal btn-foto" onclick="document.getElementById('fotoIzquierda').click()">📸 LATERAL IZQUIERDO</button>
+            <img id="previewIzquierda" class="img-preview">
+        </div>
+
+        <input type="file" id="fotoLicencia" accept="image/*" capture="environment" class="hidden" onchange="mostrarPreview(this, 'previewLicencia')">
+        <button class="btn-principal btn-foto" onclick="document.getElementById('fotoLicencia').click()">📸 FOTO LICENCIA OPERADOR</button>
+        <img id="previewLicencia" class="img-preview">
+
+        <div id="div-manto" class="hidden">
+            <label>5. Tipo de Mantenimiento:</label>
+            <select id="manto">
+                <option value="N/A">N/A (Solo Kilometraje)</option>
+                <option value="M1">M1</option>
+                <option value="M2">M2</option>
+                <option value="M3">M3</option>
+                <option value="M4">M4</option>
+                <option value="M5">M5</option>
+                <option value="M6">M6</option>
+                <option value="M7">M7</option>
+                <option value="CORRECTIVO">CORRECTIVO</option>
+            </select>
+        </div>
+
+        <label>7. Comentarios / Reporte (Mecánico):</label>
+        <textarea id="comentarios" style="width:100%; height:60px;" placeholder="Detalles mecánicos observados..."></textarea>
+
+        <label>8. Observaciones Estéticas (Recepción):</label>
+        <textarea id="obsEsteticas" style="width:100%; height:60px;" placeholder="Golpes, rayones, focos rotos..."></textarea>
+
+        <div id="progressContainer">
+            <div id="progressBar"></div>
+        </div>
+        <div id="statusMsg" class="status"></div>
+
+        <button id="btnRegistrar" class="btn-principal" onclick="iniciarRegistro()">REGISTRAR DATOS</button>
+        <button id="btnAtras" class="btn-principal" style="background-color: #666; font-size: 14px;" onclick="cerrarFormulario()">ATRÁS</button>
+    </div>
+</div>
+
+<!-- ================= MODAL DE ÍNDICE DE ESTADÍA Y CONTROL DE PATIO ================= -->
+<div id="modalEstadiaPatio" class="modal-fullscreen">
+    <div class="modal-contenedor-ancho">
+        
+        <!-- Barra de herramientas no imprimible -->
+        <div class="no-print" style="margin-bottom: 20px; padding: 12px; background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 6px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="margin: 0; font-size: 13px; font-weight: bold; color: #0f766e;">Ordenar por:</label>
+                <select id="ordenEstadiaSelect" style="width: auto; padding: 6px 10px; margin: 0; font-size: 13px; border-color: #0d9488;" onchange="renderizarTablaEstadia()">
+                    <option value="dias_desc">⏳ Más días a menos días (Mayor estadía)</option>
+                    <option value="dias_asc">⏱️ Menos días a más días (Recientes)</option>
+                    <option value="unidad_asc">🔢 Número de Unidad (Menor a Mayor)</option>
+                    <option value="ruta_asc">🚍 Ruta</option>
+                </select>
+            </div>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                <button type="button" class="btn-principal" style="padding: 8px 12px; margin: 0; font-size: 12px; background: #0d9488;" onclick="abrirModalCargaManualEstadia()">➕ Cargar Activo de Excel</button>
+                <button type="button" class="btn-principal" style="padding: 8px 12px; margin: 0; font-size: 12px; background: #0284c7;" onclick="exportarEstadiaExcelCSV()">📥 Bajar Excel (.CSV)</button>
+                <button type="button" class="btn-principal" style="padding: 8px 12px; margin: 0; font-size: 12px; background: #198754;" onclick="window.print()">🖨 Imprimir</button>
+                <button type="button" class="btn-principal" style="padding: 8px 12px; margin: 0; font-size: 12px; background: #666;" onclick="cerrarModalEstadia()">Cerrar</button>
+            </div>
+        </div>
+
+        <!-- Encabezado Oficial -->
+        <div style="border-bottom: 2px solid #222; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <div style="flex: 1.2;">
+                <h2 style="margin: 0; font-size: 15px; text-transform: uppercase; color: #111; letter-spacing: 0.5px; text-align: left;">EGO MÓVIL MTY — GESTIÓN DE TALLER</h2>
+                <h3 style="margin: 3px 0 0 0; font-size: 12px; font-weight: 600; color: #444;">REPORTE EN TIEMPO REAL: ÍNDICE DE ESTADÍA DE UNIDADES EN PATIO</h3>
+            </div>
+            <div style="text-align: center; flex: 0.8;">
+                <img src="https://res.cloudinary.com/dygb7qjgt/image/upload/v1776721918/WhatsApp_Image_2026-04-20_at_11.10.30_AM_bipr97.jpg" alt="Logo e-go" style="max-height: 44px; width: auto; object-fit: contain;">
+            </div>
+            <div style="text-align: right; font-size: 11px; color: #333; flex: 1; min-width: 140px;">
+                <p style="margin: 0;"><strong>Fecha Corte:</strong> <span id="estadiaFechaTexto">--</span></p>
+                <p style="margin: 2px 0 0 0;"><strong>Hora:</strong> <span id="estadiaHoraTexto">--</span></p>
+            </div>
+        </div>
+
+        <!-- Resumen de Contadores -->
+        <div style="background: #f8fafc; border: 1px solid #cbd5e1; padding: 8px 14px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+            <span><strong>Unidades Físicas en Patio:</strong> <strong id="totalUnidadesEnPatio" style="color: #0369a1; font-size: 13px;">0</strong></span>
+            <span><strong>Rezago Crítico (>48h):</strong> <strong id="totalUnidadesCriticas" style="color: #b91c1c; font-size: 13px;">0</strong></span>
+            <span><strong>Promedio de Estadía:</strong> <strong id="promedioEstadiaTexto" style="color: #0f766e;">0 días</strong></span>
+        </div>
+
+        <!-- Tabla de Estadía -->
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 15px;">
+            <thead>
+                <tr style="background: #e2e8f0; border: 1px solid #64748b; text-align: left;">
+                    <th style="padding: 6px; border: 1px solid #64748b; width: 28px; text-align: center;">#</th>
+                    <th style="padding: 6px; border: 1px solid #64748b; width: 60px; text-align: center;">Unidad</th>
+                    <th style="padding: 6px; border: 1px solid #64748b; width: 120px;">Ruta</th>
+                    <th style="padding: 6px; border: 1px solid #64748b; width: 80px; text-align: center;">Ingreso</th>
+                    <th style="padding: 6px; border: 1px solid #64748b; width: 85px; text-align: center;">Estadía</th>
+                    <th style="padding: 6px; border: 1px solid #64748b; width: 85px; text-align: center;">Mtto.</th>
+                    <th style="padding: 6px; border: 1px solid #64748b;">Reporte Mecánico (Kevin)</th>
+                    <th class="no-print" style="padding: 6px; border: 1px solid #64748b; width: 85px; text-align: center;">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpoTablaEstadia"></tbody>
+        </table>
+
+        <!-- Firmas al Imprimir -->
+        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 30px; font-size: 11px; font-weight: bold;">
+            <div style="width: 30%;">
+                <div style="border-bottom: 1.5px solid #000; height: 35px; margin-bottom: 6px;"></div>
+                SUPERVISOR DE PATIO
+            </div>
+            <div style="width: 30%;">
+                <div style="border-bottom: 1.5px solid #000; height: 35px; margin-bottom: 6px;"></div>
+                COORDINADOR DE MANTENIMIENTO
+            </div>
+            <div style="width: 30%;">
+                <div style="border-bottom: 1.5px solid #000; height: 35px; margin-bottom: 6px;"></div>
+                LOGÍSTICA Y PROYECCIÓN
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ================= MODAL / CARÁTULA DE ENTREGA (IMPRIMIBLE SALIDAS) ================= -->
+<div id="modalCaratulaEntrega" class="modal-fullscreen">
+    <div class="modal-contenedor-ancho">
+        
+        <div class="no-print" style="margin-bottom: 20px; padding: 12px; background: #eef2f7; border-radius: 6px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label style="margin: 0; font-size: 14px; font-weight: bold;">Filtrar por Fecha:</label>
+                <input type="date" id="filtroFechaCaratula" style="width: auto; padding: 6px 10px; margin: 0; font-size: 14px;" onchange="renderizarCaratulaPorFecha(this.value)">
+            </div>
+            <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn-principal" style="padding: 8px 12px; margin: 0; font-size: 13px; background: #0d6efd;" onclick="agregarUnidadManualModal()">➕ Añadir Unidad</button>
+                <button type="button" class="btn-principal" style="padding: 8px 12px; margin: 0; font-size: 13px; background: #198754;" onclick="window.print()">🖨 Imprimir</button>
+                <button type="button" class="btn-principal" style="padding: 8px 12px; margin: 0; font-size: 13px; background: #666;" onclick="cerrarCaratulaModal()">Cerrar</button>
+            </div>
+        </div>
+
+        <div style="border-bottom: 2px solid #222; padding-bottom: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+            <div style="flex: 1.2;">
+                <h2 style="margin: 0; font-size: 15px; text-transform: uppercase; color: #111; letter-spacing: 0.5px; text-align: left;">EGO MÓVIL MTY — CONTROL DE FLOTA</h2>
+                <h3 style="margin: 3px 0 0 0; font-size: 12px; font-weight: 600; color: #444;">CARÁTULA DE ENTREGA Y RECEPCIÓN DE DOCUMENTACIÓN FÍSICA (SALIDAS)</h3>
+            </div>
+
+            <div style="text-align: center; flex: 0.8;">
+                <img src="https://res.cloudinary.com/dygb7qjgt/image/upload/v1776721918/WhatsApp_Image_2026-04-20_at_11.10.30_AM_bipr97.jpg" alt="Logo e-go" style="max-height: 44px; width: auto; object-fit: contain;">
+            </div>
+
+            <div style="text-align: right; font-size: 11px; color: #333; flex: 1; min-width: 140px;">
+                <p style="margin: 0;"><strong>Fecha:</strong> <span id="caratulaFechaTexto">--</span></p>
+                <p style="margin: 2px 0 0 0;"><strong>Generado:</strong> <span id="caratulaHoraTexto">--</span></p>
+            </div>
+        </div>
+
+        <div style="background: #f7f9fa; border: 1px solid #ccc; padding: 7px 12px; border-radius: 4px; margin-bottom: 15px; font-size: 11.5px; display: flex; justify-content: space-between;">
+            <span><strong>Lote:</strong> Salidas del Día</span>
+            <span><strong>Total Unidades Liberadas:</strong> <strong id="caratulaTotalLiberadas">0</strong></span>
+            <span><strong>Hojas Físicas Entregadas:</strong> <strong id="caratulaTotalFisicas">0</strong></span>
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 15px;">
+            <thead>
+                <tr style="background: #e9ecef; border: 1px solid #888; text-align: left;">
+                    <th style="padding: 6px; border: 1px solid #888; width: 26px; text-align: center;">#</th>
+                    <th style="padding: 6px; border: 1px solid #888; width: 60px; text-align: center;">Unidad</th>
+                    <th style="padding: 6px; border: 1px solid #888; width: 120px;">Ruta</th>
+                    <th style="padding: 6px; border: 1px solid #888; width: 80px; text-align: right;">Km Salida</th>
+                    <th style="padding: 6px; border: 1px solid #888; width: 90px; text-align: center;">Tipo Mtto.</th>
+                    <th style="padding: 6px; border: 1px solid #888;">Comentario / Trabajo Reportado</th>
+                    <th style="padding: 6px; border: 1px solid #888; width: 50px; text-align: center;">Físico</th>
+                    <th class="no-print" style="padding: 6px; border: 1px solid #888; width: 45px; text-align: center;">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="cuerpoTablaCaratula"></tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; text-align: center; margin-top: 15px; font-size: 11px; font-weight: bold;">
+            <div style="width: 29%;">
+                <div style="border-bottom: 1.5px solid #000; height: 40px; margin-bottom: 6px;"></div>
+                ENTREGA DE HOJAS
+            </div>
+            <div style="width: 29%;">
+                <div style="border-bottom: 1.5px solid #000; height: 40px; margin-bottom: 6px;"></div>
+                COTEJÓ Y VALIDÓ
+            </div>
+            <div style="width: 29%;">
+                <div style="border-bottom: 1.5px solid #000; height: 40px; margin-bottom: 6px;"></div>
+                RECEPCIÓN DE HOJAS
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    // ===== SISTEMA ANTI-CACHÉ =====
+    const VERSION_APP = "14.0";
+
+    (function verificarVersion() {
+        const versionGuardada = localStorage.getItem("ego_version");
+        if (versionGuardada !== VERSION_APP) {
+            localStorage.setItem("ego_version", VERSION_APP);
+            if (!window.location.search.includes("v=" + VERSION_APP)) {
+                window.location.replace(window.location.pathname + "?v=" + VERSION_APP);
+                return;
             }
+        }
+    })();
 
-            const fechaInput = document.getElementById('inputFecha').value;
-            let fechaString = "";
-            if (fechaInput) {
-                const [year, month, day] = fechaInput.split('-');
-                fechaString = `${day}/${month}/${year}`;
-                const selectorImp = document.getElementById('cambiarFechaImpresion');
-                if (selectorImp) selectorImp.value = fechaInput;
-            }
+    // ===== FIREBASE CONFIGURACIÓN =====
+    const firebaseConfig = {
+        apiKey: "AIzaSyDLywqH8iBbnlSwwRFhWVbZ4mjEkz6Xs_8",
+        authDomain: "gestion-servicios-ego.firebaseapp.com",
+        projectId: "gestion-servicios-ego",
+        storageBucket: "gestion-servicios-ego.firebasestorage.app",
+        messagingSenderId: "378018276879",
+        appId: "1:378018276879:web:310b4d30b0d3d4e8c6257a"
+    };
 
-            document.getElementById('print-eco').innerText = economico;
-            document.getElementById('print-base').innerText = base;
-            document.getElementById('print-km').innerText = kilometraje ? new Intl.NumberFormat('es-MX').format(kilometraje) : "";
-            document.getElementById('print-fecha').innerText = fechaString;
-            document.getElementById('print-folio-servicio').innerText = folioCita;
+    let db = null;
+    try {
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        db = firebase.firestore();
+    } catch (e) {
+        console.warn("Firebase no inicializado:", e);
+    }
 
-            let textoManto = "PERSONALIZADO";
-            if (valorGrupo === "Correctivo") textoManto = "CORRECTIVO";
-            else if (valorGrupo) textoManto = valorGrupo.toUpperCase();
-            document.getElementById('print-grupo-manto').innerText = "MANTENIMIENTO: " + textoManto;
+    const CLAVE_ACCESO = "EGO";
+    const URL_WEBAPP = "https://script.google.com/macros/s/AKfycbxcwxND04enMlkP5dWQW7lbQmBd7EL_nlm8MN89umtCLHYmsX7r_a7tFkmxgUnvDgAhQQ/exec";
+    const CLOUD_NAME = "dygb7qjgt";
+    const UPLOAD_PRESET = "ego_fotos";
+    let MODO_SELECCIONADO = "";
+    let qrcodeInstancia = null;
+    let videoStream = null;
+    let animacionFrameId = null;
+    let cacheUnidadesEnPatio = [];
 
-            const notificacionC = document.getElementById('print-notificacion-correctivo');
-            if(valorGrupo === "Correctivo") { notificacionC.classList.remove('hidden'); } else { notificacionC.classList.add('hidden'); }
+    const unidadesData = { 
+        "AEROPUERTO Y GRIEGA": ["6070", "6074", "6078", "6083", "6085", "6086", "6087", "6089", "6095", "6097"],
+        "EXPO AEROPUERTO": ["7054", "7055", "7056", "7057", "7058", "7059", "7060", "7061", "7062"],
+        "ALIANZA REAL": ["6003", "6013", "6015", "6026", "6027", "6028", "6036", "6038", "6039", "6044", "6045", "6047", "6050", "6053", "6059", "6065", "6066", "6075", "6081", "6082", "6092", "6096", "6098", "6099", "6100"],
+        "CIENEGA DE FLORES": ["3386", "3409", "3415", "3425", "3427", "3431", "3433", "3450", "3459", "3466", "3544", "3565", "3579", "3584", "3585"],
+        "Nuevas Unidades": ["7000"],
+        "PALMIRAS": ["6048", "6055", "6076", "6079", "6093"],
+        "PRO VIVIENDA": ["6005", "6008", "6009", "6011", "6014", "6019", "6022", "6029", "6030", "6031", "6033", "6037", "6040", "6041", "6042", "6052", "6056", "6058", "6062", "6063", "6064", "6067", "6069"],
+        "RUTA 1": ["3263", "3289", "3326", "3384", "3385", "3410", "3441", "3474", "3478", "3479", "3480", "3484", "3487", "3495", "3496", "3505", "3506", "3520", "3529", "3530", "3532", "3534", "3535", "3536", "3537", "3539", "3540", "3541", "3542", "3543", "3582"],
+        "RUTA 2": ["3332", "3360", "3368", "3392", "3395", "3407", "3435", "3445", "3545", "3555", "3588", "3591"],
+        "RUTA 13": ["3329", "3353", "3418", "3429", "3442", "3461", "3470", "3546", "3549", "3586"],
+        "RUTA 20": ["6004", "6012", "6016", "6017", "6018", "6020", "6032", "6034", "6035", "6043", "6046", "6049", "6051", "6057", "6061", "6068", "6071", "6072", "6073", "6084", "6090", "6091"],
+        "RUTA 39": ["3240", "3304", "3345", "3348", "3351", "3362", "3381", "3395", "3397", "3398", "3417", "3421", "3422", "3426", "3436", "3439", "3446", "3449", "3472", "3500", "3501", "3523", "3528", "3531", "3559", "3578", "3590", "3592"],
+        "RUTA 41": ["3010", "3196", "3212", "3224", "3233", "3247", "3276", "3284", "3293", "3296", "3297", "3298", "3299", "3300", "3306", "3307", "3311", "3316", "3317", "3322", "3323", "3324", "3352", "3383", "3420", "3423", "3473", "3483", "3484", "3485", "3486", "3490", "3492", "3504", "3508", "3509", "3512", "3548", "3589", "3597", "7025", "7026", "7027", "7028", "7100"],
+        "RUTA 68": ["3215", "3242", "3253", "3254", "3255", "3256", "3257", "3259", "3261", "3264", "3265", "3266", "3267", "3268", "3270", "3271", "3272", "3273", "3274", "3275", "3276", "3277", "3278", "3279", "3280", "3281", "3282", "3283", "3285", "3286", "3287", "3288", "3290", "3291", "3294", "3295", "3434", "3463", "3552", "3593"],
+        "RUTA 109": ["3050", "3195", "3197", "3199", "3200", "3201", "3202", "3203", "3204", "3205", "3207", "3208", "3209", "3213", "3217", "3218", "3219", "3220", "3225", "3226", "3229", "3230", "3231", "3232", "3234", "3235", "3238", "3239", "3241", "3243", "3245", "3246", "3248", "3249", "3252", "3428", "3430", "3454", "3482", "3484", "3489", "3503", "3511", "3599", "3600"],
+        "RUTA 117": ["3163", "3164", "3165", "3166", "3167", "3168", "3169", "3170", "3171", "3172", "3173", "3174", "3175", "3176", "3177", "3178", "3179", "3180", "3181", "3182", "3183", "3184", "3185", "3186", "3187", "3188", "3189", "3190", "3191", "3192"],
+        "RUTA 160": ["7029", "7030", "7031", "7032", "7033", "7034", "7035", "7036", "7037", "7038", "7039", "7040", "7041", "7042", "7043", "7044", "7045", "7046", "7047", "7048", "7049", "7050", "7051", "7052", "7053"],
+        "RUTA 201": ["3214", "3223", "3244", "3258", "3262", "3302", "3314", "3437", "3507", "3538", "3547", "3563", "3568", "3574", "3583"],
+        "RUTA 218": ["3331", "3333", "3334", "3336", "3337", "3338", "3339", "3341", "3342", "3350", "3355", "3356", "3404", "3406", "3408", "3412", "3416", "3419", "3424", "3432", "3440", "3454"],
+        "RUTA 223": ["3206", "3210", "3211", "3221", "3228", "3236", "3237", "3250", "3269", "3313", "3328", "3405", "3414", "3564", "3595"],
+        "RUTA 227": ["7001", "7002", "7003", "7004", "7005", "7006", "7007", "7008", "7009", "7010", "7011", "7012", "7013", "7014", "7015", "7016", "7017", "7018", "7019", "7020", "7021", "7022", "7023", "7024"],
+        "RUTA 228": ["3019", "3021", "3022", "3023", "3024", "3025", "3026", "3027", "3028", "3029", "3030", "3031", "3032", "3033", "3034", "3035", "3036", "3037", "3038", "3039", "3040", "3041", "3042", "3043", "3045", "3046", "3047", "3048", "3049", "3052", "3053", "3054", "3055", "3056", "3057", "3058", "3059", "3060", "3061", "3062", "3198", "3216"],
+        "RUTA 233": ["3001", "3002", "3003", "3004", "3005", "3044", "3123", "3251", "3305", "3325", "3340", "3344", "3380", "3390", "3399", "3401", "3448", "3455", "3476", "3522", "3554", "3556", "3561", "3580", "3587", "3594", "3598", "7080", "7081", "7082", "7083", "7084", "7085", "7086", "7087", "7088", "7089", "7090", "7091", "7092", "7093", "7094", "7095", "7096", "7097", "7098", "7099"],
+        "RUTA 310": ["3011", "3012", "3013", "3014", "3015", "3016", "3017", "3018", "3020", "3051", "3088", "3089", "3090", "3091", "3092", "3093", "3094", "3095", "3096", "3097", "3098", "3099", "3100", "3101", "3102", "3103", "3104", "3130", "3131", "3132", "3133", "3134", "3135", "3136", "3137", "3138", "3139", "3140", "3141", "3142", "3143", "3144", "3145", "3146", "3147", "3148", "3149", "3150", "3151", "3152", "3153", "3154", "3155", "3156", "3157", "3158", "3159", "3160", "3161", "3162", "3447", "3451", "3457", "3458", "3465", "3467", "3550", "3551", "3557", "3558", "3560", "3562", "3566", "3567", "3569", "3570", "3571", "3572", "3573", "3575", "3577", "3581", "3596"],
+        "RUTA 311": ["3227", "3260", "3292", "3301", "3308", "3309", "3310", "3312", "3315", "3318", "3319", "3320", "3321", "3475", "3477", "3484", "3488", "3493", "3494", "3497", "3498"],
+        "RUTA 313": ["3499", "3502", "3510", "3513", "3514", "3516", "3517", "3518", "3519", "3521", "3524", "3526", "3527"],
+        "RUTA 527": ["3063", "3064", "3065", "3066", "3067", "3068", "3069", "3070", "3071", "3072", "3073", "3074", "3075", "3076", "3077", "3078", "3079", "3080", "3081", "3082", "3083", "3084", "3085", "3086", "3087", "3354", "3358", "3361", "3363", "3365", "3366", "3369", "3370", "3371", "3372", "3373", "3375", "3376", "3377", "3378", "3379", "3394", "3400", "3444", "3453", "3456", "3460", "3462", "3464", "3468", "3469", "3471"],
+        "RUTA 601": ["3105", "3106", "3107", "3108", "3109", "3110", "3111", "3112", "3113", "3114", "3115", "3116", "3117", "3118", "3119", "3120", "3121", "3122", "3124", "3125", "3126", "3127", "3128", "3129", "3193", "3330", "3335", "3343", "3346", "3347", "3349", "3357", "3359", "3364", "3367", "3382", "3387", "3388", "3389", "3391", "3393", "3396", "3402", "3411", "3413"],
+        "Ruta 685/198": ["3438", "3374", "3481", "3525", "3576"],
+        "VALLE SOLEADO": ["3006", "3007", "3008", "3009", "3194", "3303", "3327", "3403", "3443", "3452", "3491", "3515", "3533", "3553", "7063", "7064", "7065", "7066", "7067", "7068", "7069", "7070", "7071", "7072", "7073", "7074", "7075", "7076", "7077", "7078", "7079"],
+        "VISTAS DEL CARMEN": ["6001", "6002", "6006", "6007", "6010", "6021", "6023", "6024", "6025", "6054", "6060", "6077", "6080", "6088", "6094"]
+    };
 
-            const boxComentarios = document.getElementById('print-comentarios-box');
-            if(textoComentarios.trim() !== '') {
-                boxComentarios.innerHTML = `
-                    <div style="padding: 2px 4px; border-bottom: 1px solid black; min-height: 16px;">${textoComentarios}</div>
-                    <div style="border-bottom: 1px solid black; height: 16px;"></div><div style="border-bottom: 1px solid black; height: 16px;"></div>
-                    <div style="border-bottom: 1px solid black; height: 16px;"></div><div style="border-bottom: 1px solid black; height: 16px;"></div>
-                `;
-            } else {
-                boxComentarios.innerHTML = `
-                    <div style="border-bottom: 1px solid black; height: 16px;"></div><div style="border-bottom: 1px solid black; height: 16px;"></div>
-                    <div style="border-bottom: 1px solid black; height: 16px;"></div><div style="border-bottom: 1px solid black; height: 16px;"></div><div style="border-bottom: 1px solid black; height: 16px;"></div>
-                `;
-            }
+    function obtenerRutaDeUnidad(numeroUnidad) {
+        const uStr = String(numeroUnidad).trim();
+        for (const [ruta, unidades] of Object.entries(unidadesData)) {
+            if (unidades.includes(uStr)) return ruta;
+        }
+        return "SIN RUTA ASIGNADA";
+    }
 
-            const tbodyPrint = document.getElementById('print-table-body');
-            tbodyPrint.innerHTML = ''; 
-            let serviciosMarcados = []; 
-            const palomitaVerde = `<svg style="width: 14px; height: 14px; color: #15803d; margin: 0 auto; display: block;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"></path></svg>`;
+    // ===== GESTIÓN DE ESTADÍA Y PATIO (FIRESTORE) =====
+    function calcularDiasTranscurridos(fechaIngresoStr) {
+        if (!fechaIngresoStr) return 0;
+        const [y, m, d] = fechaIngresoStr.split("-").map(Number);
+        const fIngreso = new Date(y, m - 1, d);
+        
+        const hoy = new Date();
+        const hoySinHora = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+        
+        const difMs = hoySinHora - fIngreso;
+        const dias = Math.floor(difMs / (1000 * 60 * 60 * 24));
+        return Math.max(0, dias);
+    }
 
-            if (valorGrupo === "Correctivo") {
-                const trCorrectivo = document.createElement('tr');
-                trCorrectivo.innerHTML = `
-                    <td class="col-desc" style="background-color: #fef2f2; color: #b91c1c;">SERVICIO CORRECTIVO GENERAL (Ver comentarios)</td>
-                    <td class="col-actividades" style="padding: 0;">${palomitaVerde}</td>
-                    <td class="col-sino">${palomitaVerde}</td>
-                    <td class="col-persona" style="font-size: 8px; text-align: center; vertical-align: middle; font-weight: bold;">${mecanico}</td>
-                `;
-                tbodyPrint.appendChild(trCorrectivo);
-            }
+    async function abrirModalEstadia() {
+        document.getElementById('modalEstadiaPatio').style.display = 'block';
+        await recargarDatosEstadia();
+    }
 
-            listaServicios.forEach((servicio, index) => {
-                const chk = document.getElementById(`chk_${index}`);
-                const isChecked = chk ? chk.checked : false; 
-                const marca = isChecked ? palomitaVerde : ''; 
-                const persona = isChecked ? mecanico : '';
-                if(isChecked) serviciosMarcados.push(servicio);
+    function cerrarModalEstadia() {
+        document.getElementById('modalEstadiaPatio').style.display = 'none';
+    }
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="col-desc">${servicio}</td>
-                    <td class="col-actividades" style="padding: 0;">${marca}</td>
-                    <td class="col-sino"></td>
-                    <td class="col-persona" style="font-size: 8px; text-align: center; vertical-align: middle; font-weight: bold;">${persona}</td>
-                `;
-                tbodyPrint.appendChild(tr);
-            });
+    async function recargarDatosEstadia() {
+        const ahora = new Date();
+        document.getElementById('estadiaFechaTexto').textContent = ahora.toLocaleDateString('es-MX');
+        document.getElementById('estadiaHoraTexto').textContent = ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
 
-            document.getElementById('fr-eco').innerText = economico;
-            document.getElementById('fr-base').innerText = base;
-            document.getElementById('fr-folio').innerText = folioCita;
-            document.getElementById('fr-km-recepcion').innerText = kilometraje ? new Intl.NumberFormat('es-MX').format(kilometraje) : "";
+        cacheUnidadesEnPatio = [];
 
-            const esSalida = (window.movimientoTipo === "SALIDA");
-
-            document.getElementById('fr-titulo-hoja').innerText = esSalida ? "FORMATO ENTREGA (SALIDA)." : "FORMATO RECEPCION.";
-
-            if (esSalida) {
-                document.getElementById('fr-label-carroceria').classList.add('hidden-hoja');
-                document.getElementById('fr-grid-fila1').classList.add('hidden-hoja');
-                document.getElementById('fr-grid-fila2').classList.add('hidden-hoja');
-                document.getElementById('fr-licencia-salida').classList.remove('hidden-hoja');
-                if (window.urlFotoLicencia) document.getElementById('img-licencia-salida').src = window.urlFotoLicencia;
-            } else {
-                document.getElementById('fr-label-carroceria').classList.remove('hidden-hoja');
-                document.getElementById('fr-grid-fila1').classList.remove('hidden-hoja');
-                document.getElementById('fr-grid-fila2').classList.remove('hidden-hoja');
-                document.getElementById('fr-licencia-salida').classList.add('hidden-hoja');
-            }
-
-            const firmasContainer = document.getElementById('fr-firmas-container');
-            if (esSalida) {
-                firmasContainer.innerHTML = `
-                    <div class="fr-firma-box">
-                        <div style="border-bottom: 1px solid black; margin-bottom: 8px;"></div>
-                        <div>FIRMA DE AUTORIZACIÓN DE ENTREGA DE UNIDAD</div>
-                        <div style="margin-top: 15px; display: flex; align-items: flex-end; justify-content: center;">
-                            <span style="margin-right: 5px;">FECHA.</span>
-                            <span style="border-bottom: 1px solid black; width: 120px; display: inline-block; min-height: 12px;" class="firma-fecha-texto">${fechaString}</span>
-                        </div>
-                    </div>
-                    <div class="fr-firma-box">
-                        <div style="border-bottom: 1px solid black; margin-bottom: 8px;"></div>
-                        <div>FIRMA DE SALIDA DE UNIDAD DE GD</div>
-                        <div style="margin-top: 15px; display: flex; align-items: flex-end; justify-content: center;">
-                            <span style="margin-right: 5px;">FECHA.</span>
-                            <span style="border-bottom: 1px solid black; width: 120px; display: inline-block; min-height: 12px;" class="firma-fecha-texto">${fechaString}</span>
-                        </div>
-                    </div>
-                `;
-            } else {
-                firmasContainer.innerHTML = `
-                    <div class="fr-firma-box">
-                        <div style="border-bottom: 1px solid black; margin-bottom: 8px;"></div>
-                        <div>FIRMA DE INGRESO DE UNIDAD A GD</div>
-                        <div style="margin-top: 15px; display: flex; align-items: flex-end; justify-content: center;">
-                            <span style="margin-right: 5px;">FECHA.</span>
-                            <span style="border-bottom: 1px solid black; width: 120px; display: inline-block; min-height: 12px;" class="firma-fecha-texto">${fechaString}</span>
-                        </div>
-                    </div>
-                    <div class="fr-firma-box">
-                        <div style="border-bottom: 1px solid black; margin-bottom: 8px;"></div>
-                        <div>FIRMA DE AUTORIZACION DE ENTRADA DE UNIDAD A GD</div>
-                        <div style="margin-top: 15px; display: flex; align-items: flex-end; justify-content: center;">
-                            <span style="margin-right: 5px;">FECHA.</span>
-                            <span style="border-bottom: 1px solid black; width: 120px; display: inline-block; min-height: 12px;" class="firma-fecha-texto">${fechaString}</span>
-                        </div>
-                    </div>
-                `;
-            }
-
-            if(window.urlFotoFrontal) document.getElementById('img-front').src = window.urlFotoFrontal;
-            if(window.urlFotoTrasera) document.getElementById('img-back').src = window.urlFotoTrasera;
-            if(window.urlFotoDerecha) document.getElementById('img-right').src = window.urlFotoDerecha;
-            if(window.urlFotoIzquierda) document.getElementById('img-left').src = window.urlFotoIzquierda;
-            if(window.urlFotoLicencia) document.getElementById('img-licencia').src = window.urlFotoLicencia;
-
-            const cajaObs = document.getElementById('fr-caja-obs-recepcion');
-            if (cajaObs) {
-                const estiloTexto = "font-size: 11px; font-weight: bold; padding: 2px 0; border-bottom: 1px solid black; min-height: 14px;";
-                let lineasHTML = [];
-
-                if (esSalida) {
-                    if (textoComentarios.trim() !== '') {
-                        lineasHTML.push(`<div style="${estiloTexto}">${textoComentarios}</div>`);
-                    }
-                    if (window.obsEsteticas && window.obsEsteticas.trim() !== '') {
-                        lineasHTML.push(`<div style="${estiloTexto}">${decodeURIComponent(window.obsEsteticas).toUpperCase()}</div>`);
-                    }
-                } else {
-                    if (window.obsEsteticas && window.obsEsteticas.trim() !== '') {
-                        lineasHTML.push(`<div style="${estiloTexto}">${decodeURIComponent(window.obsEsteticas).toUpperCase()}</div>`);
-                    }
-                }
-
-                const renglonesVacios = Math.max(0, 4 - lineasHTML.length);
-                let html = `<div class="fr-obs-title">OBSERVACIONES.</div>` + lineasHTML.join("");
-                for (let i = 0; i < renglonesVacios; i++) {
-                    html += `<div class="fr-obs-line"></div>`;
-                }
-                cajaObs.innerHTML = html;
-            }
-
-            if(!modoSoloLectura && (serviciosMarcados.length > 0 || valorGrupo === "Correctivo")) {
-                guardarEnFirebase({ 
-                    fecha: fechaString, economico: economico, base: base, kilometraje: kilometraje, folio: folioCita,
-                    mecanico: mecanico, comentarios: textoComentarios, obsEsteticas: window.obsEsteticas, servicios: serviciosMarcados, grupo: grupoSeleccionado,
-                    fotos: { frontal: window.urlFotoFrontal, trasera: window.urlFotoTrasera, derecha: window.urlFotoDerecha, izquierda: window.urlFotoIzquierda, licencia: window.urlFotoLicencia }
-                });
-            }
-
-            document.getElementById('ui-container').style.display = 'none';
-            document.getElementById('print-container').style.display = 'block';
-
-            if (esSalida) {
-                toggleHojas('recepcion');
-                document.getElementById('btn-tg-servicio').style.display = 'none';
-                document.getElementById('btn-tg-ambas').style.display = 'none';
-
-                const linkSalida = `https://desarollo-ego-movil.github.io/gestion-servicios-ego/?unidad=${encodeURIComponent(economico)}&ruta=${encodeURIComponent(base)}&km=${encodeURIComponent(kilometraje)}&fecha=${encodeURIComponent(fechaInput)}&folio=${encodeURIComponent(folioCita)}&comentarios=${encodeURIComponent(textoComentarios)}&obsest=${encodeURIComponent(window.obsEsteticas || '')}&movimiento=SALIDA&f_frontal=${encodeURIComponent(window.urlFotoFrontal)}&f_trasera=${encodeURIComponent(window.urlFotoTrasera)}&f_derecha=${encodeURIComponent(window.urlFotoDerecha)}&f_izquierda=${encodeURIComponent(window.urlFotoIzquierda)}&f_licencia=${encodeURIComponent(window.urlFotoLicencia)}`;
-                actualizarLinkEnHojaExcel(linkSalida);
-            } else {
-                toggleHojas('ambas');
-            }
-
-            if(document.getElementById('btn-volver-ui')) document.getElementById('btn-volver-ui').style.display = 'inline-block';
-            window.scrollTo(0, 0); 
-        };
-
-        async function guardarEnFirebase(registro) {
+        // 1. Cargar desde Firestore
+        if (db) {
             try {
-                let docIdFinal = "";
-                const esProgramacionOficina = !params.has('unidad');
-                const estatusFinal = esProgramacionOficina ? "PROGRAMADO" : "COMPLETADO";
-
-                if (window.idDocFused) {
-                    const docRef = doc(db, "servicios", window.idDocFused);
-                    await updateDoc(docRef, {
-                        economico: registro.economico, fecha: registro.fecha, base: registro.base, kilometraje: registro.kilometraje, folio: registro.folio || 'S/F',
-                        mecanico: registro.mecanico, comentarios: registro.comentarios || '', obsEsteticas: registro.obsEsteticas || '', servicios: registro.servicios,
-                        grupo: registro.grupo, fotos: registro.fotos || null, timestamp: Date.now(), estatus: estatusFinal
-                    });
-                    docIdFinal = window.idDocFused;
-                    window.idDocFused = null; 
-                    alert("✅ SERVICIO FUSIONADO Y COMPLETADO CON ÉXITO");
-                } else {
-                    const docRef = await addDoc(serviciosRef, {
-                        economico: registro.economico, fecha: registro.fecha, base: registro.base, kilometraje: registro.kilometraje, folio: registro.folio || 'S/F',
-                        mecanico: registro.mecanico, comentarios: registro.comentarios || '', obsEsteticas: registro.obsEsteticas || '', servicios: registro.servicios,
-                        grupo: registro.grupo, fotos: registro.fotos || null, timestamp: Date.now(), estatus: estatusFinal
-                    });
-                    docIdFinal = docRef.id;
-                    if(esProgramacionOficina) alert("BORRADOR GUARDADO. La unidad quedó pre-programada correctamente.");
-                }
-
-                const linkUnico = "https://desarollo-ego-movil.github.io/gestion-servicios-ego/?ver=" + docIdFinal;
-                actualizarLinkEnHojaExcel(linkUnico);
-            } catch (e) { console.error("Error al guardar: ", e); }
+                const snapshot = await db.collection("estadia_patio").where("estatus", "==", "EN_TALLER").get();
+                snapshot.forEach(doc => cacheUnidadesEnPatio.push(doc.data()));
+            } catch (err) {
+                console.warn("Fallo lectura Firestore, usando localStorage:", err);
+            }
         }
 
-        window.volverUI = function() {
-            if(!modoSoloLectura) {
-                document.getElementById('ui-container').style.display = 'block';
-                document.getElementById('print-container').style.display = 'none';
-                window.scrollTo(0, 0);
-            }
-        };
-
-        window.cargarHojaDesdeFirebase = async function(docId) {
+        // 2. Respaldo local si no hay conexión
+        if (cacheUnidadesEnPatio.length === 0) {
             try {
-                const docSnap = await getDoc(doc(db, "servicios", docId));
-                if (docSnap.exists()) {
-                    const datos = docSnap.data();
-                    modoSoloLectura = true;
+                const local = JSON.parse(localStorage.getItem("ego_estadia_local") || "[]");
+                cacheUnidadesEnPatio = local.filter(item => item.estatus === "EN_TALLER");
+            } catch (e) {}
+        }
 
-                    document.getElementById('inputEco').value = datos.economico || '';
-                    document.getElementById('inputBase').value = datos.base || '';
-                    document.getElementById('inputKm').value = datos.kilometraje || '';
-                    document.getElementById('inputFolio').value = datos.folio || 'S/F';
-                    document.getElementById('inputMecanico').value = datos.mecanico || '';
-                    document.getElementById('inputComentarios').value = datos.comentarios || '';
-                    document.getElementById('inputObsEsteticas').value = datos.obsEsteticas || '';
-                    
-                    if(datos.fecha) {
-                        const partes = datos.fecha.split('/');
-                        if(partes.length === 3) {
-                            const fISO = `${partes[2]}-${partes[1]}-${partes[0]}`;
-                            document.getElementById('inputFecha').value = fISO;
-                            if (document.getElementById('cambiarFechaImpresion')) {
-                                document.getElementById('cambiarFechaImpresion').value = fISO;
-                            }
-                        }
-                    }
+        renderizarTablaEstadia();
+    }
 
-                    window.urlFotoFrontal = (datos.fotos && datos.fotos.frontal) ? datos.fotos.frontal : '';
-                    window.urlFotoTrasera = (datos.fotos && datos.fotos.trasera) ? datos.fotos.trasera : '';
-                    window.urlFotoDerecha = (datos.fotos && datos.fotos.derecha) ? datos.fotos.derecha : '';
-                    window.urlFotoIzquierda = (datos.fotos && datos.fotos.izquierda) ? datos.fotos.izquierda : '';
-                    window.urlFotoLicencia = (datos.fotos && datos.fotos.licencia) ? datos.fotos.licencia : '';
-                    window.obsEsteticas = datos.obsEsteticas || '';
+    function renderizarTablaEstadia() {
+        const criterio = document.getElementById('ordenEstadiaSelect').value;
+        const tbody = document.getElementById('cuerpoTablaEstadia');
+        tbody.innerHTML = '';
 
-                    cargarCheckboxes();
-                    setTimeout(() => {
-                        (datos.servicios || []).forEach(s => {
-                            const idx = listaServicios.indexOf(s);
-                            const chk = document.getElementById(`chk_${idx}`);
-                            if(chk) chk.checked = true;
-                        });
-                        
-                        if(datos.grupo) {
-                            if(datos.grupo === "Correctivo") { document.getElementById('selectPaqueteM').value = "Correctivo"; }
-                            else if(datos.grupo.includes("M1")) { document.getElementById('selectPaqueteM').value = "M1"; }
-                            else if(datos.grupo.includes("M2")) { document.getElementById('selectPaqueteM').value = "M2"; }
-                            else if(datos.grupo.includes("M3")) { document.getElementById('selectPaqueteM').value = "M3"; }
-                            else if(datos.grupo.includes("M4")) { document.getElementById('selectPaqueteM').value = "M4"; }
-                            else if(datos.grupo.includes("M5")) { document.getElementById('selectPaqueteM').value = "M5"; }
-                            else if(datos.grupo.includes("M6")) { document.getElementById('selectPaqueteM').value = "M6"; }
-                            else if(datos.grupo.includes("M7")) { document.getElementById('selectPaqueteM').value = "M7"; }
-                        }
-
-                        window.generarHoja();
-                        document.getElementById('btn-volver-ui').style.display = 'none';
-                    }, 200);
-                } else {
-                    document.getElementById('print-container').innerHTML = '<div class="text-center p-10 font-bold text-lg text-red-600">Error: El registro no existe.</div>';
-                    document.getElementById('print-container').style.display = 'block';
-                    document.getElementById('ui-container').style.display = 'none';
-                }
-            } catch (error) {
-                console.error("Error obteniendo documento:", error);
-            }
-        };
-
-        onSnapshot(query(serviciosRef, orderBy("timestamp", "desc")), (snaps) => {
-            const tbody = document.getElementById('tabla-historial-body');
-            const msgVacio = document.getElementById('mensaje-vacio');
-            if(!tbody) return; 
-            tbody.innerHTML = ''; historialGlobal = []; 
-            if (snaps.empty) { msgVacio.classList.remove('hidden'); return; }
-            else { msgVacio.classList.add('hidden'); }
-
-            snaps.forEach((documento) => {
-                const reg = documento.data();
-                reg.id = documento.id; historialGlobal.push(reg);
-                let horaStr = reg.timestamp ? new Date(reg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "N/A";
-                let listaHTML = `<ul class="list-disc list-inside mt-2 text-xs text-slate-600 max-h-32 overflow-y-auto pr-2">`;
-                (reg.servicios || []).forEach(s => { listaHTML += `<li class="truncate" title="${s}">${s}</li>`; });
-                listaHTML += `</ul>`;
-                let notaComentarios = (reg.comentarios && reg.comentarios.trim() !== '') ? `<div class="mt-2 text-xs bg-amber-50 text-amber-800 border border-amber-200 p-1.5 rounded"><i class="font-bold">Comentarios:</i> ${reg.comentarios}</div>` : '';
-
-                const badgeEstatus = reg.estatus === "PROGRAMADO" ? 
-                    `<span class="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-0.5 rounded border border-amber-200">Programado</span>` : 
-                    `<span class="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-0.5 rounded border border-green-200">✅ Completado</span>`;
-
-                const folioTexto = reg.folio ? `<span class="bg-slate-100 text-slate-800 font-bold text-xs px-2 py-0.5 rounded border border-slate-300">${reg.folio}</span>` : '<span class="text-slate-400">S/F</span>';
-
-                const tr = document.createElement('tr');
-                tr.className = "hover:bg-slate-50 transition-colors fila-historial";
-                tr.innerHTML = `
-                    <td class="px-4 py-4 whitespace-nowrap align-top"><div>${reg.fecha || '-'}</div><div class="text-xs text-slate-500 mt-1 flex items-center gap-1"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>${horaStr}</div></td>
-                    <td class="px-4 py-4 font-bold text-slate-900 align-top">${reg.economico || '-'}</td>
-                    <td class="px-4 py-4 align-top">${folioTexto}</td>
-                    <td class="px-4 py-4 text-slate-700 align-top"><span class="block">${reg.base || '-'}</span><span class="block text-xs text-slate-500 mt-1"><i class="font-semibold">Km:</i> ${reg.kilometraje ? new Intl.NumberFormat('es-MX').format(reg.kilometraje) : 'N/A'}</span><span class="block text-xs text-slate-500"><i class="font-semibold">Mec:</i> ${reg.mecanico || 'N/A'}</span></td>
-                    <td class="px-4 py-4 align-top"><div class="flex flex-wrap items-center gap-2 mb-2"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2.5 py-0.5 rounded border border-indigo-200">${reg.grupo || "Personalizado"}</span> ${badgeEstatus} <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded border border-blue-200">${(reg.servicios || []).length} marcados</span></div>${listaHTML}${notaComentarios}</td>
-                    <td class="px-4 py-4 text-right align-top">
-                        <button onclick="window.open('?ver=${reg.id}', '_blank')" class="text-blue-600 hover:text-blue-800 font-bold text-xs bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded transition-colors mb-2 block w-full text-center">Ver Hoja</button>
-                        <button onclick="borrarRegistro('${reg.id}')" class="text-red-500 hover:text-red-700 font-bold text-xs bg-red-50 hover:bg-red-100 px-3 py-1 rounded transition-colors block w-full text-center">Borrar</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+        // Agregar cálculo de días actualizados
+        cacheUnidadesEnPatio.forEach(item => {
+            item.diasCalculados = calcularDiasTranscurridos(item.fechaEntrada);
         });
 
-        window.borrarRegistro = async function(id) {
-            if(confirm("¿Estás seguro de borrar este registro?")) { try { await deleteDoc(doc(db, "servicios", id)); } catch (e) { console.error(e); } }
-        };
+        // Ordenamiento dinámico
+        if (criterio === "dias_desc") {
+            cacheUnidadesEnPatio.sort((a, b) => b.diasCalculados - a.diasCalculados);
+        } else if (criterio === "dias_asc") {
+            cacheUnidadesEnPatio.sort((a, b) => a.diasCalculados - b.diasCalculados);
+        } else if (criterio === "unidad_asc") {
+            cacheUnidadesEnPatio.sort((a, b) => Number(a.unidad) - Number(b.unidad));
+        } else if (criterio === "ruta_asc") {
+            cacheUnidadesEnPatio.sort((a, b) => (a.ruta || "").localeCompare(b.ruta || ""));
+        }
 
-        window.descargarExcel = function() {
-            if(historialGlobal.length === 0) { alert("No hay registros."); return; }
-            let csvContent = '\uFEFF' + "FECHA,ESTATUS,ECONOMICO,FOLIO,BASE,KILOMETRAJE,MECANICO,GRUPO,COMENTARIOS,OBS_ESTETICAS,CANTIDAD,MANTENIMIENTOS\n";
-            historialGlobal.forEach(reg => {
-                let det = (reg.servicios || []).join(" / ").replace(/"/g, '""');
-                csvContent += `"${reg.fecha || ''}","${reg.estatus || 'COMPLETADO'}","${reg.economico}","${reg.folio || 'S/F'}","${reg.base}","${reg.kilometraje}","${reg.mecanico}","${reg.grupo}","${reg.comentarios || ''}","${reg.obsEsteticas || ''}","${(reg.servicios || []).length}","${det}"\n`;
-            });
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a"); a.href = url; a.download = "Historial_Servicios.csv"; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        };
+        // Totales y Estadísticas
+        const total = cacheUnidadesEnPatio.length;
+        let criticos = 0;
+        let sumaDias = 0;
 
-        window.filtrarHistorial = function() {
-            const filter = document.getElementById("buscadorHistorial").value.toUpperCase();
-            const tr = document.getElementById("tabla-historial-body").getElementsByTagName("tr");
-            for (let i = 0; i < tr.length; i++) {
-                let tdEco = tr[i].getElementsByTagName("td")[1];
-                let tdFolio = tr[i].getElementsByTagName("td")[2];
-                let match = false;
-                if (tdEco && (tdEco.textContent || tdEco.innerText).toUpperCase().indexOf(filter) > -1) match = true;
-                if (tdFolio && (tdFolio.textContent || tdFolio.innerText).toUpperCase().indexOf(filter) > -1) match = true;
-                tr[i].style.display = match ? "" : "none";
-            }
-        };
+        cacheUnidadesEnPatio.forEach(item => {
+            if (item.diasCalculados >= 2) criticos++;
+            sumaDias += item.diasCalculados;
+        });
 
-        window.onload = async function() {
-            restaurarFecha();
-            cargarCheckboxes();
-            
-            const verId = params.get('ver');
-            if(verId) {
-                window.cargarHojaDesdeFirebase(verId);
-            } else if(params.get('unidad')) {
+        const promedio = total > 0 ? (sumaDias / total).toFixed(1) : "0.0";
+        document.getElementById('totalUnidadesEnPatio').textContent = total;
+        document.getElementById('totalUnidadesCriticas').textContent = criticos;
+        document.getElementById('promedioEstadiaTexto').textContent = `${promedio} días`;
 
-                if (params.get('fecha')) {
-                    const fP = params.get('fecha');
-                    if (fP.includes('-')) {
-                        const fISO = fP.slice(0, 10);
-                        document.getElementById('inputFecha').value = fISO;
-                        if (document.getElementById('cambiarFechaImpresion')) {
-                            document.getElementById('cambiarFechaImpresion').value = fISO;
-                        }
-                    } else if (fP.includes('/')) {
-                        const partes = fP.split('/');
-                        if (partes.length === 3) {
-                            const fISO = `${partes[2]}-${partes[1].padStart(2, '0')}-${partes[0].padStart(2, '0')}`;
-                            document.getElementById('inputFecha').value = fISO;
-                            if (document.getElementById('cambiarFechaImpresion')) {
-                                document.getElementById('cambiarFechaImpresion').value = fISO;
-                            }
-                        }
-                    }
-                }
+        if (total === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 25px; color: #64748b; border: 1px solid #cbd5e1;">
+                        No hay unidades activas en patio.<br>
+                        <small style="color: #0d9488; cursor: pointer; text-decoration: underline; font-weight: bold;" onclick="abrirModalCargaManualEstadia()">
+                            👉 Haz clic aquí para dar de alta camiones que ya están en taller desde Excel.
+                        </small>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
 
-                if (params.get('movimiento') === 'SALIDA') {
-                    document.getElementById('inputEco').value = params.get('unidad') || "";
-                    document.getElementById('inputBase').value = params.get('ruta') || "";
-                    document.getElementById('inputKm').value = params.get('km') || "";
-                    document.getElementById('inputFolio').value = params.get('folio') || "S/F";
-                    document.getElementById('inputComentarios').value = params.get('comentarios') || "";
-                    document.getElementById('inputObsEsteticas').value = params.get('obsest') || "";
-                    document.getElementById('inputMecanico').value = "";
-                    window.obsEsteticas = params.get('obsest') || "";
-                    window.movimientoTipo = "SALIDA";
-                    setTimeout(() => { window.generarHoja(); }, 300);
-                    return;
-                } else {
-                    window.movimientoTipo = "ENTRADA";
-                }
+        cacheUnidadesEnPatio.forEach((item, index) => {
+            const dias = item.diasCalculados;
+            let tagClase = "estadia-verde";
+            let textoDias = `${dias} d`;
 
-                const uParam = params.get('unidad');
-                
-                let serviciosPreprogramados = [];
-                let grupoPreprogramado = "";
-                window.idDocFused = null;
-
-                try {
-                    const q = query(serviciosRef, where("economico", "==", uParam));
-                    const querySnapshot = await getDocs(q);
-                    
-                    if (!querySnapshot.empty) {
-                        const programados = querySnapshot.docs
-                            .map(doc => ({ id: doc.id, ...doc.data() }))
-                            .filter(item => item.estatus === "PROGRAMADO");
-                        
-                        if (programados.length > 0) {
-                            programados.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-                            
-                            const docProg = programados[0];
-                            window.idDocFused = docProg.id;
-                            serviciosPreprogramados = docProg.servicios || [];
-                            grupoPreprogramado = docProg.grupo || "";
-                        }
-                    }
-                } catch(err) {
-                    console.error("Error al buscar hojas programadas: ", err);
-                }
-
-                document.getElementById('inputEco').value = uParam;
-                document.getElementById('inputBase').value = params.get('ruta') || "";
-                document.getElementById('inputKm').value = params.get('km') || "";
-                document.getElementById('inputFolio').value = params.get('folio') || "S/F";
-                document.getElementById('inputComentarios').value = params.get('comentarios') || "";
-                document.getElementById('inputObsEsteticas').value = params.get('obsest') || "";
-                document.getElementById('inputMecanico').value = "";
-                window.obsEsteticas = params.get('obsest') || "";
-
-                if(window.idDocFused) {
-                    if(grupoPreprogramado) {
-                        document.getElementById('selectPaqueteM').value = grupoPreprogramado;
-                    }
-                    listaServicios.forEach((servicio, index) => {
-                        const chk = document.getElementById(`chk_${index}`);
-                        if(chk) chk.checked = serviciosPreprogramados.includes(servicio);
-                    });
-                } else {
-                    if(params.get('manto')) {
-                        document.getElementById('selectPaqueteM').value = params.get('manto');
-                        aplicarPaquete();
-                    }
-                }
-            }
-        };
-
-        window.forzarImpresioniOS = function() {
-            if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                setTimeout(function() {
-                    window.print();
-                }, 100);
-                
-                setTimeout(function() {
-                    if (confirm('Si el diálogo de impresión no apareció:\n\n1. Toca el botón COMPARTIR de Safari (cuadrado con flecha ↑)\n2. Desplázate hacia abajo\n3. Selecciona "Imprimir"\n\n¿Intentar de nuevo?')) {
-                        window.print();
-                    }
-                }, 3000);
+            if (dias === 0) {
+                tagClase = "estadia-verde";
+                textoDias = "Hoy (Día 1)";
+            } else if (dias === 1) {
+                tagClase = "estadia-amarillo";
+                textoDias = "1 día";
             } else {
-                window.print();
+                tagClase = "estadia-rojo";
+                textoDias = `⚠️ ${dias} días`;
             }
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding: 6px; border: 1px solid #94a3b8; text-align: center;">${index + 1}</td>
+                <td style="padding: 6px; border: 1px solid #94a3b8; text-align: center; font-weight: bold; font-size: 12px;">${item.unidad}</td>
+                <td style="padding: 6px; border: 1px solid #94a3b8;">${item.ruta || obtenerRutaDeUnidad(item.unidad)}</td>
+                <td style="padding: 6px; border: 1px solid #94a3b8; text-align: center;">${item.fechaEntrada}</td>
+                <td style="padding: 6px; border: 1px solid #94a3b8; text-align: center;">
+                    <span class="tag-estadia ${tagClase}">${textoDias}</span>
+                </td>
+                <td style="padding: 6px; border: 1px solid #94a3b8; text-align: center; font-weight: bold;">${item.manto || 'N/A'}</td>
+                <td style="padding: 6px; border: 1px solid #94a3b8; font-size: 10.5px; color: #1e293b;">
+                    ${item.comentarios || 'Sin observaciones mecánicas'}
+                </td>
+                <td class="no-print" style="padding: 6px; border: 1px solid #94a3b8; text-align: center;">
+                    <button type="button" style="background: #e11d48; color: white; border: none; border-radius: 4px; padding: 4px 7px; font-size: 10.5px; font-weight: bold; cursor: pointer;" onclick="darSalidaDirectaDesdeEstadia('${item.unidad}', '${item.ruta}')">📤 Salida</button>
+                    <button type="button" class="btn-quitar-fila" style="margin-left: 2px;" onclick="eliminarUnidadDeEstadia('${item.unidad}')">✕</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // MÉTODO 1: Carga manual rápida de unidades que ya estaban en el Excel
+    async function abrirModalCargaManualEstadia() {
+        const u = prompt("1. Número de Unidad que ya está en taller (ej. 3206):");
+        if (!u) return;
+
+        const fechaIngreso = prompt("2. Fecha REAL en que ingresó al taller (YYYY-MM-DD):", new Date().toISOString().slice(0, 10));
+        if (!fechaIngreso) return;
+
+        const manto = prompt("3. Tipo de Mantenimiento (M1, M2, M3, CORRECTIVO, etc.):", "CORRECTIVO");
+        const comentarios = prompt("4. Comentarios o reporte de la falla:", "Cargado previo de Excel");
+        const ruta = obtenerRutaDeUnidad(u);
+
+        const registro = {
+            unidad: u.trim(),
+            ruta: ruta,
+            fechaEntrada: fechaIngreso.trim(),
+            manto: manto ? manto.trim().toUpperCase() : "CORRECTIVO",
+            comentarios: comentarios ? comentarios.trim() : "Sin observaciones",
+            estatus: "EN_TALLER",
+            origen: "MIGRACION_EXCEL",
+            timestamp: Date.now()
         };
-    </script>
+
+        guardarEnStorageEstadiaLocal(registro);
+
+        if (db) {
+            try {
+                await db.collection("estadia_patio").doc(registro.unidad).set(registro, { merge: true });
+            } catch (e) {
+                console.warn("Fallo guardado Firestore:", e);
+            }
+        }
+
+        alert(`✅ Unidad ${u} agregada al control de estadía sin modificar tu Excel.`);
+        await recargarDatosEstadia();
+    }
+
+    function guardarEnStorageEstadiaLocal(registro) {
+        try {
+            let local = JSON.parse(localStorage.getItem("ego_estadia_local") || "[]");
+            local = local.filter(item => item.unidad !== registro.unidad);
+            local.push(registro);
+            localStorage.setItem("ego_estadia_local", JSON.stringify(local));
+        } catch (e) {}
+    }
+
+    async function eliminarUnidadDeEstadia(unidad) {
+        if (!confirm(`¿Deseas quitar la unidad ${unidad} de la lista de patio?`)) return;
+
+        try {
+            let local = JSON.parse(localStorage.getItem("ego_estadia_local") || "[]");
+            local = local.filter(item => item.unidad !== unidad);
+            localStorage.setItem("ego_estadia_local", JSON.stringify(local));
+        } catch (e) {}
+
+        if (db) {
+            try {
+                await db.collection("estadia_patio").doc(unidad).delete();
+            } catch (e) {}
+        }
+        await recargarDatosEstadia();
+    }
+
+    function darSalidaDirectaDesdeEstadia(unidad, ruta) {
+        cerrarModalEstadia();
+        abrirFormulario('SALIDA');
+        document.getElementById('ruta').value = ruta;
+        actualizarUnidades();
+        setTimeout(() => {
+            document.getElementById('unidad').value = unidad;
+        }, 150);
+    }
+
+    // Exportación limpia a Excel (.CSV compatible con acentos UTF-8)
+    function exportarEstadiaExcelCSV() {
+        if (!cacheUnidadesEnPatio || cacheUnidadesEnPatio.length === 0) {
+            return alert("No hay unidades activas en patio para exportar.");
+        }
+
+        let csv = "\uFEFF"; // BOM para abrir con tildes y caracteres en Excel
+        csv += "No.,Unidad,Ruta,Fecha Ingreso,Dias Estadia,Tipo Mantenimiento,Reporte Mecanico (Kevin)\n";
+
+        cacheUnidadesEnPatio.forEach((item, index) => {
+            const comLimpio = (item.comentarios || "").replace(/"/g, '""').replace(/\n/g, ' ');
+            csv += `"${index + 1}","${item.unidad}","${item.ruta || ''}","${item.fechaEntrada}","${item.diasCalculados}","${item.manto || ''}","${comLimpio}"\n`;
+        });
+
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const hoy = new Date().toISOString().slice(0, 10);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `ESTADIA_PATIO_EGO_${hoy}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // ===== LÓGICA DE ESCANEO DIRECTO CON JSQR =====
+    async function iniciarEscaneoQR() {
+        const contenedor = document.getElementById('contenedorLectorCamara');
+        contenedor.classList.remove('hidden');
+
+        const video = document.getElementById('videoLector');
+
+        try {
+            videoStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { ideal: "environment" } }
+            });
+            video.srcObject = videoStream;
+            video.setAttribute("playsinline", "true");
+            await video.play();
+            animacionFrameId = requestAnimationFrame(escanearCuadroVideo);
+        } catch (err) {
+            console.error("Error al acceder a la cámara:", err);
+            alert("⚠️ No se pudo abrir la cámara. Revisa permisos.");
+            contenedor.classList.add('hidden');
+        }
+    }
+
+    function escanearCuadroVideo() {
+        const video = document.getElementById('videoLector');
+        const canvas = document.getElementById('canvasLector');
+        const ctx = canvas.getContext('2d');
+
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            canvas.height = video.videoHeight;
+            canvas.width = video.videoWidth;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const codigo = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert"
+            });
+
+            if (codigo && codigo.data) {
+                procesarResultadoQR(codigo.data);
+                return;
+            }
+        }
+        animacionFrameId = requestAnimationFrame(escanearCuadroVideo);
+    }
+
+    function detenerEscaneoQR() {
+        if (animacionFrameId) {
+            cancelAnimationFrame(animacionFrameId);
+            animacionFrameId = null;
+        }
+        if (videoStream) {
+            videoStream.getTracks().forEach(track => track.stop());
+            videoStream = null;
+        }
+        document.getElementById('contenedorLectorCamara').classList.add('hidden');
+    }
+
+    function escanearDesdeArchivo(input) {
+        if (!input.files || input.files.length === 0) return;
+        const file = input.files[0];
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.getElementById('canvasLector');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const codigo = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (codigo && codigo.data) {
+                    procesarResultadoQR(codigo.data);
+                } else {
+                    alert("⚠️ No se detectó código QR en la imagen seleccionada.");
+                }
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function procesarResultadoQR(decodedText) {
+        detenerEscaneoQR();
+
+        try {
+            const data = JSON.parse(decodedText);
+            
+            if (data && data.tipo === "EGO_CITA") {
+                const hoyLocal = new Date().toLocaleDateString('en-CA');
+                const fechaCita = data.fecha;
+
+                if (fechaCita && fechaCita < hoyLocal) {
+                    alert(`⛔ ENTRADA DENEGADA: CITA VENCIDA\n\n• Unidad: ${data.unidad}\n• Fecha Programada: ${fechaCita}\n• Fecha Actual: ${hoyLocal}\n\nDebe ser re-agendada.`);
+                    return;
+                }
+
+                if (fechaCita && fechaCita > hoyLocal) {
+                    const aceptarAdelantada = confirm(`⚠️ CITA ADELANTADA\n\nProgramada para: ${fechaCita}\nHoy es: ${hoyLocal}\n\n¿Autorizas la recepción anticipada?`);
+                    if (!aceptarAdelantada) return;
+                }
+
+                const rutaSelect = document.getElementById('ruta');
+                rutaSelect.value = data.ruta || obtenerRutaDeUnidad(data.unidad);
+                actualizarUnidades();
+
+                setTimeout(() => {
+                    document.getElementById('unidad').value = data.unidad;
+                }, 100);
+
+                document.getElementById('folioCita').value = data.folio;
+
+                const mantoSelect = document.getElementById('manto');
+                if (data.manto) {
+                    if (data.manto.includes("M1")) mantoSelect.value = "M1";
+                    else if (data.manto.includes("M2")) mantoSelect.value = "M2";
+                    else if (data.manto.includes("M3")) mantoSelect.value = "M3";
+                    else if (data.manto.includes("M4")) mantoSelect.value = "M4";
+                    else if (data.manto.includes("M5")) mantoSelect.value = "M5";
+                    else if (data.manto.includes("M6")) mantoSelect.value = "M6";
+                    else if (data.manto.includes("M7")) mantoSelect.value = "M7";
+                    else if (data.manto.includes("CORRECTIVO")) mantoSelect.value = "CORRECTIVO";
+                }
+
+                if (data.motivo && data.motivo !== "SERVICIO PROGRAMADO") {
+                    document.getElementById('comentarios').value = `[CITA: ${data.motivo}]`;
+                }
+
+                alert(`✅ CITA DETECTADA:\n• Unidad: ${data.unidad}\n• Folio: ${data.folio}\n\nDatos cargados.`);
+                document.getElementById('km').focus();
+            } else {
+                alert("⚠️ Código QR no válido para citas EGO.");
+            }
+        } catch (e) {
+            alert("ℹ️ Código QR detectado: " + decodedText);
+        }
+    }
+
+    function cerrarFormulario() {
+        detenerEscaneoQR();
+        location.reload();
+    }
+
+    // ===== LÓGICA DE CITAS CON QR =====
+    function abrirGeneradorCitas() {
+        document.getElementById('sec-seleccion').classList.add('hidden');
+        document.getElementById('sec-generar-cita').classList.remove('hidden');
+        document.getElementById('titulo').innerText = "GENERAR CITA PREVIA";
+        document.getElementById('cajaResultadoPaseQR').classList.add('hidden');
+        
+        const hoyISO = new Date().toLocaleDateString('en-CA');
+        document.getElementById('citaFechaProgramada').value = hoyISO;
+    }
+
+    function volverAlMenuPrincipal() {
+        document.getElementById('sec-generar-cita').classList.add('hidden');
+        document.getElementById('sec-seleccion').classList.remove('hidden');
+        document.getElementById('titulo').innerText = "SISTEMA EGO PRO";
+    }
+
+    function autocompletarRutaCita(unidad) {
+        const u = unidad.trim();
+        const inputRuta = document.getElementById('citaRuta');
+        if (u.length >= 4) {
+            inputRuta.value = obtenerRutaDeUnidad(u);
+        } else {
+            inputRuta.value = "";
+        }
+    }
+
+    function generarFolioAutomatico() {
+        const u = document.getElementById('citaUnidad').value.trim() || "0000";
+        const fechaVal = document.getElementById('citaFechaProgramada').value || new Date().toLocaleDateString('en-CA');
+        const partes = fechaVal.split('-');
+        const mes = partes[1] || "01";
+        const dia = partes[2] || "01";
+        const aleat = Math.floor(10 + Math.random() * 90);
+        document.getElementById('citaFolio').value = `CIT-${u}-${mes}${dia}${aleat}`;
+    }
+
+    function procesarCreacionPaseQR() {
+        const unidad = document.getElementById('citaUnidad').value.trim();
+        const ruta = document.getElementById('citaRuta').value.trim() || obtenerRutaDeUnidad(unidad);
+        const fechaProgramada = document.getElementById('citaFechaProgramada').value || new Date().toLocaleDateString('en-CA');
+        const folio = document.getElementById('citaFolio').value.trim().toUpperCase();
+        const manto = document.getElementById('citaTipoManto').value;
+        const motivo = document.getElementById('citaMotivo').value.trim();
+
+        if (!unidad || !folio) {
+            return alert("⚠️ Es obligatorio ingresar la Unidad y el Folio de la Cita.");
+        }
+
+        const payloadCita = {
+            tipo: "EGO_CITA",
+            unidad: unidad,
+            ruta: ruta,
+            folio: folio,
+            manto: manto,
+            motivo: motivo || "SERVICIO PROGRAMADO",
+            fecha: fechaProgramada
+        };
+
+        const qrString = JSON.stringify(payloadCita);
+        const contenedorQR = document.getElementById('contenedorQrCanvas');
+        contenedorQR.innerHTML = "";
+
+        qrcodeInstancia = new QRCode(contenedorQR, {
+            text: qrString,
+            width: 180,
+            height: 180,
+            colorDark: "#0f172a",
+            colorLight: "#ffffff",
+            correctLevel: QRCode.CorrectLevel.M
+        });
+
+        const resumenHTML = `
+            <div><strong>Unidad:</strong> ${unidad} (${ruta})</div>
+            <div><strong>Folio:</strong> ${folio}</div>
+            <div><strong>Mantenimiento:</strong> ${manto}</div>
+            <div><strong>Observaciones:</strong> ${motivo || 'Ninguna'}</div>
+            <div style="font-size: 12px; margin-top: 5px; color: #0284c7;"><strong>Fecha Programada:</strong> ${fechaProgramada}</div>
+        `;
+        document.getElementById('textoResumenPase').innerHTML = resumenHTML;
+        document.getElementById('badgeTextoVigencia').innerText = `⚠️ VÁLIDO ÚNICAMENTE EL DÍA: ${fechaProgramada}`;
+        document.getElementById('cajaResultadoPaseQR').classList.remove('hidden');
+        document.getElementById('cajaResultadoPaseQR').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function descargarPaseComoImagen() {
+        const qrImg = document.querySelector('#contenedorQrCanvas img') || document.querySelector('#contenedorQrCanvas canvas');
+        if (!qrImg) return alert("Primero genera el código QR.");
+
+        const unidad = document.getElementById('citaUnidad').value.trim() || "UNIDAD";
+        const folio = document.getElementById('citaFolio').value.trim() || "CITA";
+
+        let dataUrl = (qrImg.tagName.toLowerCase() === 'img') ? qrImg.src : qrImg.toDataURL("image/png");
+
+        const link = document.createElement('a');
+        link.download = `PASE_${unidad}_${folio}.png`;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    function compartirPaseWhatsApp() {
+        const unidad = document.getElementById('citaUnidad').value.trim();
+        const ruta = document.getElementById('citaRuta').value.trim();
+        const folio = document.getElementById('citaFolio').value.trim();
+        const manto = document.getElementById('citaTipoManto').value;
+        const motivo = document.getElementById('citaMotivo').value.trim();
+        const fechaProgramada = document.getElementById('citaFechaProgramada').value || new Date().toLocaleDateString('en-CA');
+
+        const textoWA = `*PASE DIGITAL DE TALLER - EGO MÓVIL*%0A` +
+                        `--------------------------------%0A` +
+                        `*Unidad:* ${unidad}%0A` +
+                        `*Ruta:* ${ruta}%0A` +
+                        `*Folio Cita:* ${folio}%0A` +
+                        `*Mantenimiento:* ${manto}%0A` +
+                        `*Fecha Programada:* ${fechaProgramada}%0A` +
+                        `*Motivo:* ${motivo || 'Cita de programación'}%0A%0A` +
+                        `*⚠️ IMPORTANTE:* VÁLIDO ÚNICAMENTE EL DÍA ${fechaProgramada}.`;
+
+        window.open(`https://api.whatsapp.com/send?text=${textoWA}`, '_blank');
+    }
+
+    // ===== CARÁTULA DE SALIDAS =====
+    function guardarEnStorageLocal(registro) {
+        try {
+            let historial = JSON.parse(localStorage.getItem("ego_salidas_historial") || "[]");
+            historial = historial.filter(item => !(item.fecha === registro.fecha && item.unidad === registro.unidad));
+            historial.push(registro);
+            localStorage.setItem("ego_salidas_historial", JSON.stringify(historial));
+        } catch (e) {}
+    }
+
+    async function guardarSalidaEnFirestore(registro) {
+        guardarEnStorageLocal(registro);
+        if (!db) return;
+        try {
+            const docId = `${registro.fecha}_${registro.unidad}`;
+            await db.collection("salidas_flota").doc(docId).set(registro, { merge: true });
+        } catch (e) {}
+    }
+
+    async function agregarUnidadManualModal() {
+        const unidad = prompt("Introduce el número de unidad (ej. 3503):");
+        if (!unidad) return;
+
+        const km = prompt(`Kilometraje de la unidad ${unidad}:`, "0");
+        const tipoManto = prompt(`Tipo de mantenimiento (PREVENTIVO o CORRECTIVO):`, "PREVENTIVO");
+        const comentarios = prompt(`Comentario o trabajo reportado:`, "Salida de unidad");
+        const fechaActual = document.getElementById('filtroFechaCaratula').value || new Date().toLocaleDateString('en-CA');
+        const ruta = obtenerRutaDeUnidad(unidad);
+
+        const nuevoRegistro = {
+            unidad: unidad.trim(),
+            ruta: ruta,
+            km: km ? km.trim() : "0",
+            tipoManto: tipoManto ? tipoManto.trim().toUpperCase() : "PREVENTIVO",
+            comentarios: comentarios ? comentarios.trim() : "Sin observaciones",
+            fecha: fechaActual
+        };
+
+        await guardarSalidaEnFirestore(nuevoRegistro);
+        renderizarCaratulaPorFecha(fechaActual);
+    }
+
+    async function eliminarUnidadDeCaratula(unidadAEliminar, fechaFiltro) {
+        if (!confirm(`¿Deseas quitar la unidad ${unidadAEliminar} de la lista de entrega?`)) return;
+
+        try {
+            let historial = JSON.parse(localStorage.getItem("ego_salidas_historial") || "[]");
+            historial = historial.filter(item => !(item.fecha === fechaFiltro && item.unidad === unidadAEliminar));
+            localStorage.setItem("ego_salidas_historial", JSON.stringify(historial));
+        } catch (e) {}
+
+        if (db) {
+            try {
+                const docId = `${fechaFiltro}_${unidadAEliminar}`;
+                await db.collection("salidas_flota").doc(docId).delete();
+            } catch (e) {}
+        }
+        renderizarCaratulaPorFecha(fechaFiltro);
+    }
+
+    function abrirCaratulaModal() {
+        const hoyISO = new Date().toLocaleDateString('en-CA');
+        document.getElementById('filtroFechaCaratula').value = hoyISO;
+        renderizarCaratulaPorFecha(hoyISO);
+        document.getElementById('modalCaratulaEntrega').style.display = 'block';
+    }
+
+    function cerrarCaratulaModal() {
+        document.getElementById('modalCaratulaEntrega').style.display = 'none';
+    }
+
+    async function renderizarCaratulaPorFecha(fechaFiltro) {
+        const ahora = new Date();
+        document.getElementById('caratulaFechaTexto').textContent = fechaFiltro;
+        document.getElementById('caratulaHoraTexto').textContent = ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+
+        let salidasFiltradas = [];
+
+        if (db) {
+            try {
+                const snapshot = await db.collection("salidas_flota").where("fecha", "==", fechaFiltro).get();
+                snapshot.forEach(doc => salidasFiltradas.push(doc.data()));
+            } catch (err) {}
+        }
+
+        if (salidasFiltradas.length === 0) {
+            try {
+                const historial = JSON.parse(localStorage.getItem("ego_salidas_historial") || "[]");
+                salidasFiltradas = historial.filter(item => item.fecha === fechaFiltro);
+            } catch (e) { salidasFiltradas = []; }
+        }
+
+        const tbody = document.getElementById('cuerpoTablaCaratula');
+        tbody.innerHTML = '';
+        const total = salidasFiltradas.length;
+        document.getElementById('caratulaTotalLiberadas').textContent = total;
+        document.getElementById('caratulaTotalFisicas').textContent = total;
+
+        if (total === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 18px; color: #777; border: 1px solid #888;">
+                        No hay salidas visibles para el ${fechaFiltro}.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        salidasFiltradas.forEach((item, index) => {
+            const ruta = item.ruta || obtenerRutaDeUnidad(item.unidad);
+            const kmTexto = item.km ? Number(item.km).toLocaleString('es-MX') + ' Km' : '---';
+            const tipoMantoTexto = item.tipoManto || 'PREVENTIVO';
+            const comentarioTexto = item.comentarios || 'Sin observaciones registradas';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding: 6px; border: 1px solid #888; text-align: center;">${index + 1}</td>
+                <td style="padding: 6px; border: 1px solid #888; text-align: center; font-weight: bold;">${item.unidad}</td>
+                <td style="padding: 6px; border: 1px solid #888;">${ruta}</td>
+                <td style="padding: 6px; border: 1px solid #888; text-align: right;">${kmTexto}</td>
+                <td style="padding: 6px; border: 1px solid #888; text-align: center; font-weight: bold;">${tipoMantoTexto}</td>
+                <td style="padding: 6px; border: 1px solid #888;">${comentarioTexto}</td>
+                <td style="padding: 6px; border: 1px solid #888; text-align: center; font-weight: bold;">[ &nbsp; ]</td>
+                <td class="no-print" style="padding: 6px; border: 1px solid #888; text-align: center;">
+                    <button type="button" class="btn-quitar-fila" onclick="eliminarUnidadDeCaratula('${item.unidad}', '${fechaFiltro}')">✕</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function verificarPass() {
+        const input = document.getElementById('passInput');
+        if(input.value.toUpperCase() === CLAVE_ACCESO) {
+            document.getElementById('sec-pass').style.display = 'none';
+            document.getElementById('sec-seleccion').classList.remove('hidden');
+        } else {
+            alert("Contraseña Incorrecta");
+            input.value = "";
+        }
+    }
+
+    function abrirFormulario(modo) {
+        MODO_SELECCIONADO = modo;
+        document.getElementById('sec-seleccion').classList.add('hidden');
+        document.getElementById('sec-form').classList.remove('hidden');
+        document.getElementById('titulo').innerText = "SISTEMA EGO: " + modo;
+
+        const hoyISO = new Date().toLocaleDateString('en-CA');
+        document.getElementById('fechaMovimientoPersonalizada').value = hoyISO;
+
+        if(modo === "SALIDA") {
+            document.getElementById('fotos-entrada').classList.add('hidden');
+            document.getElementById('div-manto').classList.add('hidden');
+            document.getElementById('aviso-salida').classList.remove('hidden');
+            document.getElementById('div-folio').classList.add('hidden');
+            document.getElementById('div-manto-salida').classList.remove('hidden');
+            document.getElementById('btnActivarLectorQR').classList.add('hidden');
+            document.getElementById('lblFechaMovimiento').innerText = "📅 Fecha del Movimiento (Salida):";
+        } else {
+            document.getElementById('fotos-entrada').classList.remove('hidden');
+            document.getElementById('div-manto').classList.remove('hidden');
+            document.getElementById('aviso-salida').classList.add('hidden');
+            document.getElementById('div-folio').classList.remove('hidden');
+            document.getElementById('div-manto-salida').classList.add('hidden');
+            document.getElementById('btnActivarLectorQR').classList.remove('hidden');
+            document.getElementById('lblFechaMovimiento').innerText = "📅 Fecha del Movimiento (Entrada):";
+        }
+    }
+
+    function actualizarUnidades() {
+        const r = document.getElementById('ruta').value;
+        const u = document.getElementById('unidad');
+        u.innerHTML = '<option value="">-- Seleccionar --</option>';
+        if (r && unidadesData[r]) {
+            unidadesData[r].forEach(num => {
+                const opt = document.createElement('option');
+                opt.value = num;
+                opt.textContent = "Unidad " + num;
+                u.appendChild(opt);
+            });
+        }
+    }
+
+    function mostrarPreview(input, imgId) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => { 
+                const img = document.getElementById(imgId);
+                img.src = e.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    async function comprimirImagen(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_WIDTH = 1600; 
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.fillStyle = "white";
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, width, height);
+                    canvas.toBlob((blob) => {
+                        const newFile = new File([blob], "foto_nitida.jpg", { type: 'image/jpeg' });
+                        resolve(newFile);
+                    }, 'image/jpeg', 0.85); 
+                };
+            };
+        });
+    }
+
+    async function subirACloudinary(file) {
+        if(!file) return "";
+        const archivoLigero = await comprimirImagen(file);
+        const formData = new FormData();
+        formData.append('file', archivoLigero);
+        formData.append('upload_preset', UPLOAD_PRESET);
+        try {
+            const resp = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+            return data.secure_url || "";
+        } catch (e) { return ""; }
+    }
+
+    function actualizarBarra(porcentaje) {
+        const bar = document.getElementById('progressBar');
+        bar.style.width = porcentaje + "%";
+    }
+
+    let urlsFotosCache = null;
+
+    async function iniciarRegistro() {
+        const status = document.getElementById('statusMsg');
+        const btn = document.getElementById('btnRegistrar');
+        const btnAtras = document.getElementById('btnAtras');
+        const progressCont = document.getElementById('progressContainer');
+
+        const r = document.getElementById('ruta').value;
+        const u = document.getElementById('unidad').value;
+        const k = document.getElementById('km').value;
+        const fLic = document.getElementById('fotoLicencia').files[0];
+        const c = document.getElementById('comentarios').value; 
+        const obsEst = document.getElementById('obsEsteticas') ? document.getElementById('obsEsteticas').value : ""; 
+        const m = document.getElementById('manto').value;     
+
+        if (!r || !u || !k) return alert("⚠️ Ruta, Unidad y KM son obligatorios.");
+
+        let folio = "N/A";
+        if (MODO_SELECCIONADO === "ENTRADA") {
+            folio = document.getElementById('folioCita').value.trim().toUpperCase();
+            if (!folio) return alert("⚠️ Es obligatorio ingresar el Folio de Cita Previa.");
+        }
+
+        let tipoSalidaManto = "N/A";
+        if (MODO_SELECCIONADO === "SALIDA") {
+            tipoSalidaManto = document.getElementById('mantoSalida').value;
+            if (!tipoSalidaManto) return alert("⚠️ Selecciona si el camión sale de mantenimiento PREVENTIVO o CORRECTIVO.");
+        }
+
+        if (!urlsFotosCache && !fLic) return alert("⚠️ La foto de la Licencia es obligatoria.");
+
+        if (MODO_SELECCIONADO === "ENTRADA" && !urlsFotosCache) {
+            const fOdo = document.getElementById('fotoInput').files[0];
+            const fFro = document.getElementById('fotoFrontal').files[0];
+            if (!fOdo || !fFro) return alert("📸 FALTAN FOTOS. En Entrada, Odómetro y Frontal son obligatorias.");
+        }
+
+        const fechaMovimiento = document.getElementById('fechaMovimientoPersonalizada').value || new Date().toLocaleDateString('en-CA');
+
+        btn.disabled = true;
+        progressCont.style.display = 'block'; 
+        
+        try {
+            if (!urlsFotosCache) {
+                btn.innerText = "SUBIENDO FOTOS...";
+                btn.style.backgroundColor = "#1a73e8";
+                actualizarBarra(10);
+                
+                let urlOdo = "", urlFro = "", urlLic = "", urlVin = "", urlTra = "", urlDer = "", urlIzq = "";
+
+                if (MODO_SELECCIONADO === "ENTRADA") {
+                    status.innerText = "Subiendo evidencias fotográficas...";
+                    urlOdo = await subirACloudinary(document.getElementById('fotoInput').files[0]);
+                    actualizarBarra(25);
+                    urlFro = await subirACloudinary(document.getElementById('fotoFrontal').files[0]); 
+                    actualizarBarra(40);
+                    urlVin = await subirACloudinary(document.getElementById('fotoVin').files[0]);
+                    urlTra = await subirACloudinary(document.getElementById('fotoTrasera').files[0]);
+                    urlDer = await subirACloudinary(document.getElementById('fotoDerecha').files[0]);
+                    urlIzq = await subirACloudinary(document.getElementById('fotoIzquierda').files[0]);
+                    actualizarBarra(65);
+                } else {
+                    status.innerText = "Preparando registro de Salida...";
+                }
+
+                status.innerText = "Subiendo Licencia...";
+                urlLic = await subirACloudinary(fLic);
+                actualizarBarra(80);
+
+                urlsFotosCache = { urlOdo, urlFro, urlLic, urlVin, urlTra, urlDer, urlIzq };
+            }
+
+            // ===== SINCRONIZACIÓN AUTOMÁTICA CON LA ESTADÍA =====
+            if (MODO_SELECCIONADO === "ENTRADA") {
+                status.innerText = "Registrando entrada en Estadía de Patio...";
+                const regEntradaPatio = {
+                    unidad: u,
+                    ruta: r,
+                    km: k,
+                    folioCita: folio,
+                    manto: m,
+                    fechaEntrada: fechaMovimiento,
+                    comentarios: c,
+                    obsEsteticas: obsEst,
+                    estatus: "EN_TALLER",
+                    timestamp: Date.now()
+                };
+                guardarEnStorageEstadiaLocal(regEntradaPatio);
+                if (db) {
+                    try {
+                        await db.collection("estadia_patio").doc(u).set(regEntradaPatio, { merge: true });
+                    } catch (errEst) { console.warn("Error guardando en estadía Firebase:", errEst); }
+                }
+            } else if (MODO_SELECCIONADO === "SALIDA") {
+                status.innerText = "Cerrando ciclo de Estadía de Patio...";
+                if (db) {
+                    try {
+                        await db.collection("estadia_patio").doc(u).update({
+                            estatus: "LIBERADO",
+                            fechaSalida: fechaMovimiento,
+                            tipoSalidaManto: tipoSalidaManto,
+                            comentariosSalida: c
+                        });
+                    } catch (e) {}
+                }
+                // Limpiar del storage local
+                try {
+                    let local = JSON.parse(localStorage.getItem("ego_estadia_local") || "[]");
+                    local = local.filter(item => item.unidad !== u);
+                    localStorage.setItem("ego_estadia_local", JSON.stringify(local));
+                } catch (e) {}
+            }
+
+            btn.innerText = "REGISTRANDO EN EXCEL...";
+            status.innerText = "Conectando con Google Sheets...";
+
+            const payload = {
+                ruta: r, 
+                unidad: u, 
+                km: k, 
+                folioCita: folio,
+                tipoSalidaManto: tipoSalidaManto,
+                manto: (MODO_SELECCIONADO === "ENTRADA") ? m : ("SALIDA - " + tipoSalidaManto),
+                movimiento: MODO_SELECCIONADO,
+                comentarios: c,
+                fechaPersonalizada: fechaMovimiento,
+                fotoOdo: urlsFotosCache.urlOdo, 
+                fotoFrontal: urlsFotosCache.urlFro, 
+                fotoLicencia: urlsFotosCache.urlLic,
+                fotoVin: urlsFotosCache.urlVin,
+                fotoTrasera: urlsFotosCache.urlTra,
+                fotoDerecha: urlsFotosCache.urlDer,
+                fotoIzquierda: urlsFotosCache.urlIzq
+            };
+
+            let filaGuardada = "";
+            let hojaGuardada = "";
+            let guardadoExitoso = false;
+            const maxIntentos = 3;
+
+            for (let intento = 1; intento <= maxIntentos; intento++) {
+                try {
+                    status.innerText = `Guardando en Excel (Intento ${intento} de ${maxIntentos})...`;
+                    const respuesta = await fetch(URL_WEBAPP, {
+                        method: "POST",
+                        body: JSON.stringify(payload)
+                    });
+                    const resultado = await respuesta.json();
+
+                    if (resultado && resultado.row) {
+                        filaGuardada = resultado.row;
+                        hojaGuardada = resultado.hoja || r;
+                        guardadoExitoso = true;
+                        break;
+                    }
+                } catch (errIntento) {
+                    if (intento < maxIntentos) await new Promise(res => setTimeout(res, 2000));
+                }
+            }
+
+            if (!guardadoExitoso || !filaGuardada) {
+                throw new Error("Google Sheets no confirmó el guardado de la fila.");
+            }
+
+            if (MODO_SELECCIONADO === "SALIDA") {
+                await guardarSalidaEnFirestore({
+                    unidad: u,
+                    ruta: r,
+                    km: k,
+                    tipoManto: tipoSalidaManto,
+                    comentarios: c,
+                    fecha: fechaMovimiento
+                });
+            }
+
+            actualizarBarra(100);
+            status.innerText = "¡Datos guardados con éxito!";
+            urlsFotosCache = null;
+
+            if (MODO_SELECCIONADO === "ENTRADA") {
+                btn.style.display = 'none';
+                btnAtras.style.display = 'none';
+
+                const btnHoja = document.createElement('button');
+                btnHoja.className = "btn-principal";
+                btnHoja.style.backgroundColor = "#ff9800"; 
+                btnHoja.innerText = "📋 GENERAR HOJA DE SERVICIO";
+                btnHoja.onclick = () => {
+                    const urlServicio = `https://desarollo-ego-movil.github.io/gestion-servicios-ego/?unidad=${u}&ruta=${encodeURIComponent(r)}&km=${k}&folio=${encodeURIComponent(folio)}&fecha=${fechaMovimiento}&fila=${filaGuardada}&hoja=${encodeURIComponent(hojaGuardada)}&comentarios=${encodeURIComponent(c)}&obsest=${encodeURIComponent(obsEst)}&manto=${encodeURIComponent(m)}&f_frontal=${encodeURIComponent(payload.fotoFrontal)}&f_trasera=${encodeURIComponent(payload.fotoTrasera)}&f_derecha=${encodeURIComponent(payload.fotoDerecha)}&f_izquierda=${encodeURIComponent(payload.fotoIzquierda)}&f_licencia=${encodeURIComponent(payload.fotoLicencia)}`;
+                    window.location.href = urlServicio;
+                };
+                status.parentNode.insertBefore(btnHoja, status.nextSibling);
+
+                const btnVolver = document.createElement('button');
+                btnVolver.className = "btn-principal";
+                btnVolver.style.backgroundColor = "#666";
+                btnVolver.style.fontSize = "14px";
+                btnVolver.innerText = "TERMINAR SIN HOJA";
+                btnVolver.onclick = () => location.reload();
+                status.parentNode.insertBefore(btnVolver, btnHoja.nextSibling);
+
+                alert("✅ ENTRADA REGISTRADA EN EXCEL Y EN PATIO. Puedes generar la Hoja de Servicio.");
+            
+            } else {
+                btn.style.display = 'none';
+                btnAtras.style.display = 'none';
+
+                const btnHojaSalida = document.createElement('button');
+                btnHojaSalida.className = "btn-principal";
+                btnHojaSalida.style.backgroundColor = "#e91e63";
+                btnHojaSalida.innerText = "📋 GENERAR FORMATO ENTREGA";
+                btnHojaSalida.onclick = () => {
+                    const urlServicio = `https://desarollo-ego-movil.github.io/gestion-servicios-ego/?unidad=${u}&ruta=${encodeURIComponent(r)}&km=${k}&fecha=${fechaMovimiento}&fila=${filaGuardada}&hoja=${encodeURIComponent(hojaGuardada)}&comentarios=${encodeURIComponent(c)}&obsest=${encodeURIComponent(obsEst)}&movimiento=SALIDA&manto=${encodeURIComponent(tipoSalidaManto)}&f_frontal=${encodeURIComponent(payload.fotoFrontal)}&f_trasera=${encodeURIComponent(payload.fotoTrasera)}&f_derecha=${encodeURIComponent(payload.fotoDerecha)}&f_izquierda=${encodeURIComponent(payload.fotoIzquierda)}&f_licencia=${encodeURIComponent(payload.fotoLicencia)}`;
+                    window.location.href = urlServicio;
+                };
+                status.parentNode.insertBefore(btnHojaSalida, status.nextSibling);
+
+                const btnVolver = document.createElement('button');
+                btnVolver.className = "btn-principal";
+                btnVolver.style.backgroundColor = "#666";
+                btnVolver.style.fontSize = "14px";
+                btnVolver.innerText = "TERMINAR SIN FORMATO";
+                btnVolver.onclick = () => location.reload();
+                status.parentNode.insertBefore(btnVolver, btnHojaSalida.nextSibling);
+
+                alert("✅ SALIDA REGISTRADA CON ÉXITO (" + tipoSalidaManto + "). Se liberó del índice de estadía.");
+            }
+
+        } catch (e) {
+            status.innerText = "⚠️ La conexión con Excel falló. Las fotos y la estadía ya están a salvo.";
+            btn.disabled = false;
+            btn.style.backgroundColor = "#d97706";
+            btn.innerText = "⚠️ REINTENTAR GUARDAR EN EXCEL";
+            alert("⚠️ No se pudo confirmar la fila en Google Sheets. Las fotos y el control de patio YA están guardados. Solo presiona 'REINTENTAR GUARDAR EN EXCEL'.");
+        }
+    }
+</script>
 </body>
 </html>
